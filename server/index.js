@@ -141,12 +141,17 @@ app.post('/api/reframe', async (req, res) => {
 // ─── POST /api/tutor-chat ───────────────────────────────────────────────
 app.post('/api/tutor-chat', async (req, res) => {
   try {
-    const { message, question, studentProfile } = req.body;
-    if (!message || !question || !studentProfile) {
-      return res.status(400).json({ error: 'message, question, and studentProfile are required.' });
+    const { message, question, studentProfile, chatHistory } = req.body;
+    if (!message || !studentProfile) {
+      return res.status(400).json({ error: 'message and studentProfile are required.' });
     }
 
-    const response = await tutorChat({ message, question, studentProfile });
+    const response = await tutorChat({
+      message,
+      question: question || 'Adding fractions with different denominators',
+      studentProfile,
+      chatHistory,
+    });
     return res.json(response);
   } catch (err) {
     console.error('tutor-chat error:', err);

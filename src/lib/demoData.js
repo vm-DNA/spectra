@@ -127,7 +127,7 @@ explain:'3/8 of a Krabby Patty plus 1/4 of another. Since 4 fits into 8, just co
 {q:'5/6 + 1/2',a:'8/6',opts:['6/8','4/3','7/6','8/6'],n1:5,d1:6,n2:1,d2:2,lcd:6,cn1:5,cn2:3,img1:KRABS,img2:SB,
 explain:'Mr. Krabs has 5/6 of the money, SpongeBob has 1/2. Convert to sixths to add!'}
 ];
-let cur=0,score=0,answered=new Set();
+let cur=0,score=0,answered=new Set(),wrongCounts={};
 
 function renderProgress(){
 let h='';for(let i=0;i<problems.length;i++){h+='<div class="dot '+(answered.has(i)?'done':i===cur?'current':'')+'"></div>';}
@@ -191,8 +191,11 @@ document.getElementById('feedback').innerHTML='<div class="result-msg correct">C
 score++;answered.add(cur);renderProgress();
 setTimeout(()=>{cur++;renderProblem();},1500);
 }else{
+if(!wrongCounts[cur])wrongCounts[cur]=0;wrongCounts[cur]++;
 btns[i].classList.add('selected-wrong');
 document.getElementById('feedback').innerHTML='<div class="result-msg wrong">Not quite! Try again!</div>';
+window.parent.postMessage({type:'wrongAnswer',questionIndex:cur,wrongCount:wrongCounts[cur],questionText:problems[cur].q},'*');
+if(wrongCounts[cur]>=3){window.parent.postMessage({type:'reframeNeeded',questionIndex:cur,questionText:problems[cur].q,wrongCount:wrongCounts[cur]},'*');}
 setTimeout(()=>{btns[i].classList.remove('selected-wrong');document.getElementById('feedback').innerHTML='';},1500);
 }}
 
@@ -456,7 +459,7 @@ function showTab(i){document.querySelectorAll('.panel').forEach((p,j)=>{p.classL
 
 // PRACTICE
 const problems=[{q:'4/5 + 1/3',a:'17/15',opts:['17/15','5/8','12/15','7/15']},{q:'2/7 + 3/4',a:'29/28',opts:['5/11','29/28','23/28','8/28']},{q:'1/2 + 2/3',a:'7/6',opts:['3/5','5/6','7/6','4/6']},{q:'3/8 + 1/4',a:'5/8',opts:['4/12','5/8','4/8','7/8']},{q:'5/6 + 1/2',a:'8/6',opts:['6/8','4/3','7/6','8/6']}];
-let cur=0,score=0,answered=new Set(),practiceStarted=false;
+let cur=0,score=0,answered=new Set(),practiceStarted=false,wrongCounts={};
 
 function renderProgress(){let h='';for(let i=0;i<5;i++){h+='<div class="p-dot '+(answered.has(i)?'done':i===cur?'cur':'')+'"></div>';}document.getElementById('progress').innerHTML=h;}
 
@@ -474,7 +477,11 @@ document.getElementById('practiceArea').innerHTML=h;
 function checkA(i,sel,ans){
 if(answered.has(cur))return;
 if(sel===ans){score++;answered.add(cur);document.getElementById('score').textContent=score;document.getElementById('fb').innerHTML='<div class="result correct">Correct!</div>';renderProgress();setTimeout(()=>{cur++;renderQ();},1200);}
-else{document.getElementById('fb').innerHTML='<div class="result wrong">Try again!</div>';setTimeout(()=>{document.getElementById('fb').innerHTML='';},1200);}
+else{if(!wrongCounts[cur])wrongCounts[cur]=0;wrongCounts[cur]++;
+document.getElementById('fb').innerHTML='<div class="result wrong">Try again!</div>';
+window.parent.postMessage({type:'wrongAnswer',questionIndex:cur,wrongCount:wrongCounts[cur],questionText:problems[cur].q},'*');
+if(wrongCounts[cur]>=3){window.parent.postMessage({type:'reframeNeeded',questionIndex:cur,questionText:problems[cur].q,wrongCount:wrongCounts[cur]},'*');}
+setTimeout(()=>{document.getElementById('fb').innerHTML='';},1200);}
 }
 
 function celebrate(){const c=document.getElementById('confettiBox');const colors=['#8BC34A','#FF9800','#2196F3','#F44336','#FFEB3B'];for(let i=0;i<50;i++){const d=document.createElement('div');d.style.cssText='position:absolute;width:10px;height:10px;background:'+colors[Math.floor(Math.random()*5)]+';left:'+Math.random()*100+'%;top:-10px;animation:cfall '+(2+Math.random()*3)+'s linear '+Math.random()*2+'s forwards';c.appendChild(d);}
@@ -650,6 +657,57 @@ export const DEMO_APPROVED_HISTORY = [
     status: 'completed',
   },
 ];
+
+// ─── PRE-GENERATED REFRAME CONTENT ─────────────────────────────────────
+// Loads instantly when a student gets a question wrong 3+ times.
+// Keyed by question text.
+export const DEMO_REFRAMES = {
+  '4/5 + 1/3': {
+    steps: [
+      { label: 'Step 1 — Same-size pieces', content: 'Imagine SpongeBob cuts a pizza into 15 equal slices. That\'s our common denominator!' },
+      { label: 'Step 2 — Convert', content: '4/5 means 12 slices out of 15. And 1/3 means 5 slices out of 15.' },
+      { label: 'Step 3 — Add the slices', content: '12 slices + 5 slices = 17 slices. So 4/5 + 1/3 = 17/15!' },
+    ],
+    simplifiedQuestion: { text: 'If SpongeBob has 12 pizza slices and Patrick brings 5 more, how many slices total?', options: ['15', '17', '7'], correctIndex: 1 },
+    encouragement: 'You\'re doing awesome! Even SpongeBob needed practice with fractions!',
+  },
+  '2/7 + 3/4': {
+    steps: [
+      { label: 'Step 1 — Find the LCD', content: 'Mr. Krabs wants to split things into 28 equal parts — that\'s the smallest number 7 and 4 both fit into.' },
+      { label: 'Step 2 — Convert each fraction', content: '2/7 = 8/28 (multiply by 4), and 3/4 = 21/28 (multiply by 7).' },
+      { label: 'Step 3 — Add', content: '8 + 21 = 29. So 2/7 + 3/4 = 29/28!' },
+    ],
+    simplifiedQuestion: { text: 'Mr. Krabs has 8 coins and finds 21 more. How many coins total?', options: ['28', '29', '13'], correctIndex: 1 },
+    encouragement: 'Mr. Krabs believes in you — and he doesn\'t believe in anything that doesn\'t make money!',
+  },
+  '1/2 + 2/3': {
+    steps: [
+      { label: 'Step 1 — Common denominator', content: 'Patrick and SpongeBob split a Krabby Patty into 6 pieces — both 2 and 3 go into 6.' },
+      { label: 'Step 2 — Convert', content: '1/2 = 3/6 (3 pieces for Patrick), and 2/3 = 4/6 (4 pieces for SpongeBob).' },
+      { label: 'Step 3 — Add', content: '3 + 4 = 7 pieces. So 1/2 + 2/3 = 7/6!' },
+    ],
+    simplifiedQuestion: { text: 'Patrick eats 3 pieces and SpongeBob eats 4 pieces. How many pieces eaten?', options: ['6', '7', '1'], correctIndex: 1 },
+    encouragement: 'Patrick is so proud of you! He says this is even better than his rock!',
+  },
+  '3/8 + 1/4': {
+    steps: [
+      { label: 'Step 1 — Lucky break!', content: '4 already fits into 8, so the common denominator is just 8. Easy!' },
+      { label: 'Step 2 — Convert only one', content: '1/4 = 2/8. The 3/8 stays the same.' },
+      { label: 'Step 3 — Add', content: '3 + 2 = 5. So 3/8 + 1/4 = 5/8!' },
+    ],
+    simplifiedQuestion: { text: 'SpongeBob has 3 Krabby Patties and gets 2 more. How many total?', options: ['4', '5', '6'], correctIndex: 1 },
+    encouragement: 'Great job! SpongeBob says "I\'m ready!" and so are you!',
+  },
+  '5/6 + 1/2': {
+    steps: [
+      { label: 'Step 1 — Common denominator', content: '2 goes into 6, so the LCD is 6. Mr. Krabs loves easy math!' },
+      { label: 'Step 2 — Convert', content: '1/2 = 3/6. The 5/6 stays the same.' },
+      { label: 'Step 3 — Add', content: '5 + 3 = 8. So 5/6 + 1/2 = 8/6!' },
+    ],
+    simplifiedQuestion: { text: 'If Mr. Krabs has 5 dollar bills and finds 3 more, how many does he have?', options: ['7', '8', '9'], correctIndex: 1 },
+    encouragement: 'Mr. Krabs says every penny counts — and so does every fraction you learn!',
+  },
+};
 
 export function getDemoLesson(studentId) {
   return DEMO_ADAPTED_LESSONS[studentId] || null;

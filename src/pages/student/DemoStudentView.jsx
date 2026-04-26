@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { STUDENTS } from '../../lib/mockData';
-import { DEMO_ADAPTED_LESSONS, DEMO_FRUSTRATION_EVENTS } from '../../lib/demoData';
+import { DEMO_ADAPTED_LESSONS, DEMO_FRUSTRATION_EVENTS, DEMO_REFRAMES } from '../../lib/demoData';
 
 // Only students that have demo lessons
 const DEMO_STUDENTS = STUDENTS.filter(s => DEMO_ADAPTED_LESSONS[s.id]);
@@ -24,6 +24,7 @@ export default function DemoStudentView() {
   const [reframeTriggered, setReframeTriggered] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [reframeData, setReframeData] = useState(null); // active reframe overlay
   const chatEndRef = useRef(null);
   const clickTimestamps = useRef([]);
   const recognitionRef = useRef(null);
@@ -49,9 +50,44 @@ export default function DemoStudentView() {
       setFrustrationScore(0);
       setFrustrationEvents([]);
       setReframeTriggered(false);
+      setReframeData(null);
       clickTimestamps.current = [];
     }
   }, [selectedStudent, lesson, character]);
+
+  // Listen for wrong answer events from lesson iframes
+  useEffect(() => {
+    const handler = (event) => {
+      const { type, questionText, wrongCount } = event.data || {};
+      if (type === 'wrongAnswer' && wrongCount) {
+        // Log frustration event for teacher dashboard
+        const newScore = Math.min(frustrationScore + 10, 100);
+        setFrustrationScore(newScore);
+        if (wrongCount >= 2) {
+          setFrustrationEvents(prev => [...prev, {
+            id: `frust-wrong-${Date.now()}`,
+            studentName: student?.name,
+            trigger: `${wrongCount} wrong answer${wrongCount > 1 ? 's' : ''} on "${questionText}"`,
+            triggerType: 'wrong_attempts',
+            frustrationScore: newScore,
+            severity: wrongCount >= 3 ? 'high' : 'moderate',
+            timestamp: new Date().toISOString(),
+            status: wrongCount >= 3 ? 'auto-reframed' : 'monitoring',
+            question: questionText,
+          }]);
+        }
+      }
+      if (type === 'reframeNeeded' && questionText) {
+        const reframe = DEMO_REFRAMES[questionText];
+        if (reframe) {
+          setReframeData({ ...reframe, questionText });
+          setReframeTriggered(true);
+        }
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [frustrationScore, student]);
 
   // Frustration detection: rapid clicks
   const recordClick = useCallback(() => {
@@ -167,13 +203,14 @@ export default function DemoStudentView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: msg,
-          question: 'Adding fractions with different denominators',
+          question: lesson?.chatContext || 'Adding fractions with different denominators',
           studentProfile: {
             name: student?.name,
             id: student?.id,
             characters: student?.characters,
             learningStyles: student?.learningStyles,
           },
+          chatHistory: chatMessages.slice(-6),
         }),
       });
       if (res.ok) {
@@ -302,7 +339,100 @@ export default function DemoStudentView() {
       <div style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
 
         {/* Lesson area */}
-        <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: 12, position: 'relative' }}>
+          {/* Reframe overlay — shows when student gets 3+ wrong on a question */}
+          {reframeData && (
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10,
+              background: 'rgba(255,255,255,0.97)', padding: 24, overflowY: 'auto',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+            }}>
+              <div style={{
+                maxWidth: 560, width: '100%', background: 'white',
+                borderRadius: 16, padding: 28, boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+                border: `2px solid ${modeStyle.border}`,
+              }}>
+                <div style={{
+                  background: '#FFF8E1', borderRadius: 10, padding: '10px 16px',
+                  marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <span style={{ fontSize: 24 }}>💡</span>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: '#F57F17' }}>
+                      Let's try a different approach!
+                    </div>
+                    <div style={{ fontSize: 12, color: '#F9A825' }}>
+                      Question: {reframeData.questionText}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step-by-step breakdown */}
+                {reframeData.steps.map((step, i) => (
+                  <div key={i} style={{
+                    background: i % 2 === 0 ? '#F3F0FF' : '#E6FFFA',
+                    borderRadius: 10, padding: '12px 16px', marginBottom: 10,
+                    borderLeft: `4px solid ${i % 2 === 0 ? '#7C3AED' : '#0D9488'}`,
+                  }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, color: '#333', marginBottom: 4 }}>
+                      {step.label}
+                    </div>
+                    <div style={{ fontSize: 14, color: '#555', lineHeight: 1.5 }}>
+                      {step.content}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Simplified question */}
+                {reframeData.simplifiedQuestion && (
+                  <div style={{
+                    background: '#F0FFF4', borderRadius: 10, padding: 16,
+                    marginTop: 16, border: '2px solid #A7F3D0',
+                  }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10, color: '#065F46' }}>
+                      Now try this easier version:
+                    </div>
+                    <div style={{ fontSize: 15, marginBottom: 12, color: '#333' }}>
+                      {reframeData.simplifiedQuestion.text}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {reframeData.simplifiedQuestion.options.map((opt, i) => (
+                        <button key={i} onClick={() => {
+                          if (i === reframeData.simplifiedQuestion.correctIndex) {
+                            setReframeData(null);
+                          }
+                        }} style={{
+                          padding: '10px 24px', borderRadius: 10, fontSize: 16,
+                          fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                          border: '2px solid #A7F3D0', background: 'white', color: '#065F46',
+                        }}>
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Encouragement */}
+                <div style={{
+                  textAlign: 'center', marginTop: 16, padding: '10px 16px',
+                  background: '#FFFBEB', borderRadius: 10, fontSize: 14,
+                  color: '#92400E', fontWeight: 500,
+                }}>
+                  {reframeData.encouragement}
+                </div>
+
+                <button onClick={() => setReframeData(null)} style={{
+                  display: 'block', margin: '16px auto 0', padding: '8px 24px',
+                  borderRadius: 20, border: 'none', background: modeStyle.color,
+                  color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}>
+                  Back to lesson
+                </button>
+              </div>
+            </div>
+          )}
+
           {lesson?.interactiveHtml ? (
             <iframe
               title="Student lesson"

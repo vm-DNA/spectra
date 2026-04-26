@@ -587,38 +587,44 @@ Return ONLY strict JSON and ensure all required fields exist with correct types.
   return results;
 }
 
-async function tutorChat({ message, question, studentProfile }) {
-  const prompt = `You are a patient lesson assistant for a student.
+async function tutorChat({ message, question, studentProfile, chatHistory }) {
+  const questionText = typeof question === 'string' ? question : (question?.text || '');
+  const questionOpts = typeof question === 'object' && Array.isArray(question?.options)
+    ? question.options.join(', ') : '';
+  const character = (studentProfile?.characters || [])[0] || 'a fun character';
 
-Student profile:
-- Name: ${studentProfile?.name || 'Student'}
-- Grade: ${studentProfile?.grade || 'Unknown'}
-- Learning styles: ${(studentProfile?.learningStyles || []).join(', ')}
-- Favorite characters: ${(studentProfile?.characters || []).join(', ')}
-- Frustration triggers: ${(studentProfile?.frustrationTriggers || []).join(', ')}
+  const historyBlock = Array.isArray(chatHistory) && chatHistory.length > 0
+    ? '\nRecent conversation:\n' + chatHistory.slice(-6).map(m =>
+        `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.text}`
+      ).join('\n') + '\n'
+    : '';
 
-Current lesson question:
-- Text: ${question?.text || ''}
-- Options: ${(question?.options || []).join(', ')}
+  const prompt = `You are a patient, warm tutor helping a student learn math. The student's name is ${studentProfile?.name || 'Student'}. They love ${character}. Their learning style is ${(studentProfile?.learningStyles || []).join(', ') || 'general'}.
 
-Student message:
-${message}
+The lesson topic is: ${questionText}
+${questionOpts ? `Current question options: ${questionOpts}` : ''}
+${historyBlock}
+The student says: "${message}"
+
+Respond helpfully to their SPECIFIC question. If they ask about a math concept, explain it clearly with an example. If they ask a clarifying question, answer it directly. If they seem confused, break it down step by step. Use ${character} references naturally.
 
 Return valid JSON:
 {
-  "reply": "short encouraging answer with one actionable next step",
-  "highlightTerms": ["term one", "term two"]
+  "reply": "your helpful, specific answer to what the student asked (2-4 sentences max)"
 }
 
 Rules:
-- Keep response short and calm
-- Use one favorite character reference when appropriate
-- Avoid overwhelm and avoid long paragraphs
-- Return JSON only`;
+- Answer the student's ACTUAL question — do NOT give a generic response
+- If they ask "what is a denominator" explain what a denominator is
+- If they ask "how do I find the LCD" explain how to find the LCD
+- If they say something unrelated to math, respond kindly and redirect
+- Keep it short, warm, and clear
+- Use ${character} in the explanation naturally
+- Return ONLY valid JSON`;
 
   const raw = await callGemma(prompt);
   return {
-    reply: asText(raw?.reply, 'Let us try one small step together.'),
+    reply: asText(raw?.reply, 'Let me help you with that! Can you tell me which part is confusing?'),
     highlightTerms: Array.isArray(raw?.highlightTerms)
       ? raw.highlightTerms.map(term => asText(term)).filter(Boolean).slice(0, 6)
       : [],
