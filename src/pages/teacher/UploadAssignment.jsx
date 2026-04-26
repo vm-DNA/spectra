@@ -583,7 +583,7 @@ function KinestheticPreview({ preview, character }) {
             srcDoc={preview.interactiveHtml}
             sandbox="allow-scripts"
             style={{
-              width: '100%', minHeight: 350, border: '2px solid #FCA5A5',
+              width: '100%', minHeight: 600, border: '2px solid #FCA5A5',
               borderRadius: 10, background: '#fff',
             }}
           />

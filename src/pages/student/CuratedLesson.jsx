@@ -398,7 +398,7 @@ export default function CuratedLesson() {
               srcDoc={adaptedVersion.interactiveHtml}
               sandbox="allow-scripts"
               style={{
-                width: '100%', minHeight: 350, border: '2px solid var(--border-md)',
+                width: '100%', minHeight: 600, border: '2px solid var(--border-md)',
                 borderRadius: 10, marginBottom: 14, background: '#fff',
               }}
             />

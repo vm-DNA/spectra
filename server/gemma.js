@@ -334,17 +334,21 @@ function getModalityInstructions(primaryStyle, student) {
 - The student reads the text and selects answers to questions`;
     case 'Kinesthetic':
       return `KINESTHETIC LEARNER INSTRUCTIONS:
-- Focus on generating a COMPLETE, interactive HTML/CSS/JS lesson
-- The interactiveHtml MUST be a full standalone HTML document (200+ lines) with:
-  * Inline CSS for colorful, themed styling featuring ${character}
-  * Interactive elements: clickable buttons, drag-and-drop, or input fields
-  * The ACTUAL problems from the worksheet embedded as interactive exercises
-  * Score tracking and visual feedback (green for correct, red for wrong)
-  * Celebration animation when all problems are solved
-  * Accessible, low-stimulation design
-  * Must work in an iframe with NO external dependencies
-- Keep elevenLabsScript minimal (no audio needed for kinesthetic)
-- Keep adaptedText brief — this learner interacts, not reads`;
+- The interactiveHtml is the PRIMARY learning channel. It must TEACH the concept, not just quiz.
+- Generate a COMPLETE standalone HTML document (300+ lines) with inline CSS and JS. NO external dependencies.
+- The interactive lesson MUST include these teaching elements:
+  1. ANIMATED PIE CHARTS / FRACTION BARS: Show fractions visually using SVG or CSS shapes. For example, draw two circles divided into slices, color the numerator slices, then animate them merging together to show the sum. The student should SEE the fractions being added.
+  2. INTERACTIVE SLIDERS: Let the student drag a slider to set numerator/denominator values and watch the fraction visualization update in real time. For example: a slider from 0 to 10 that fills a bar chart proportionally.
+  3. DRAG-AND-DROP: Let students drag fraction pieces (pie slices, bar segments, blocks) from one area to another to combine them. Use HTML5 drag events or click-to-move.
+  4. STEP-BY-STEP GUIDED WALKTHROUGH: Before any problems, walk through one example step by step with animations. Show "Step 1: Look at the denominators", "Step 2: Find common denominator", "Step 3: Add numerators" with visual transitions.
+  5. INTERACTIVE PRACTICE: After the teaching section, present the worksheet problems as interactive exercises where the student manipulates visual elements (not just clicks an answer button).
+- Theme everything with ${character}. Use ${character}'s colors and visual style.
+- Include score tracking, progress bar, and celebration animation (confetti or character animation) on completion.
+- Use CSS animations and transitions for smooth, engaging interactions.
+- The HTML must work standalone in an iframe sandbox with allow-scripts.
+- Keep elevenLabsScript minimal (no audio needed for kinesthetic learner)
+- Keep adaptedText brief — this learner interacts, not reads
+- DO NOT just create multiple-choice buttons. The whole point is HANDS-ON manipulation of visual fraction representations.`;
     default:
       return '';
   }
@@ -394,7 +398,7 @@ Return valid JSON with this exact structure:
   "interactivePlan": [
     { "step": "step_name", "instruction": "instruction for interactive step" }
   ],
-  "interactiveHtml": "${primaryStyle === 'Kinesthetic' ? 'A COMPLETE self-contained HTML document with inline CSS and JS. It MUST let the student solve the actual worksheet problems interactively (clicking, dragging, or typing answers). Theme it with the character. Use colorful, accessible design. Include score tracking, visual feedback for correct/wrong answers, and celebrations. Must work standalone in an iframe with NO external dependencies. Make it at least 200 lines of HTML.' : 'A simple HTML snippet with one interactive element'}",
+  "interactiveHtml": "${primaryStyle === 'Kinesthetic' ? 'A COMPLETE self-contained HTML document (300+ lines) with inline CSS and JS. MUST include: (1) Animated SVG pie charts or fraction bar visualizations that TEACH fractions visually, (2) Interactive sliders where the student drags to set numerator/denominator and watches the visualization update, (3) A step-by-step guided walkthrough of one example problem with animated transitions, (4) Interactive practice problems where students manipulate visual elements (drag pie slices, fill fraction bars) — NOT just click answer buttons. (5) Score tracking, progress bar, celebration confetti animation on completion. Theme with the character colors and style. Must work in an iframe sandbox with allow-scripts. NO external dependencies.' : 'null'}",
   "chatContext": "Context paragraph about the lesson for the chat tutor to reference",
   "confidence": 0.84,
   "questions": [
