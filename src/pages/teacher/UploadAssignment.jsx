@@ -68,7 +68,6 @@ export default function UploadAssignment() {
         characters: s.characters,
         sensoryPrefs: s.sensoryPrefs,
         frustrationTriggers: s.frustrationTriggers,
-        sensoryPrefs: s.sensoryPrefs,
       }));
 
       const result = await adaptLesson(rawContent, subject, studentsPayload);
