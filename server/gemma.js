@@ -351,18 +351,16 @@ function getModalityInstructions(primaryStyle, student) {
 - Generate 5-8 questions with clear answer options for the voice quiz`;
     case 'Reading':
       return `READING LEARNER INSTRUCTIONS:
-- The adaptedText is the PRIMARY learning channel — make it RICH and DETAILED
-- Write a FULL, story-driven lesson (500+ words) with ${character} as the narrator/guide:
-  * Opening: ${character} introduces the topic through a themed adventure/scenario
-  * Concept explanation: Clear, step-by-step breakdown of the math concept using ${character} examples
-  * Worked example: Walk through one complete problem with character-themed context
-  * Key rules/formulas: Highlighted in bold with character commentary
-  * Practice intro: ${character} encourages the student before the quiz
+- The adaptedText is the PRIMARY learning channel — make it clear and concise
+- Write a SHORT, focused lesson (200-300 words MAX) with ${character} as the narrator/guide:
+  * Brief opening: ${character} introduces the topic in 1-2 sentences
+  * Concept explanation: Step-by-step breakdown using ${character} examples (keep it tight)
+  * One worked example with character-themed context
+  * Key rules/formulas highlighted in bold
 - Use markdown-style formatting: **bold** for key terms, bullet points for steps
-- Include ${character}'s personality, catchphrases, and themed examples throughout
-- Make it feel like reading a fun ${character} story that teaches math
+- Include ${character}'s personality but keep it CONCISE — no filler or padding
 - Generate a comprehensive chatContext so the AI tutor can answer follow-up questions about the lesson
-- Generate 5-8 questions with 4 options each — the student reads and selects answers
+- Generate 5 questions with 4 options each — the student reads and selects answers
 - Keep interactiveHtml and elevenLabsScript minimal`;
     case 'Kinesthetic':
       return `KINESTHETIC LEARNER INSTRUCTIONS:
