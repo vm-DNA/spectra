@@ -39,7 +39,7 @@ const FRACTION_QUESTIONS = [
   { id: 'dq2', text: '2/7 + 3/4 = ?', options: ['5/11', '29/28', '23/28', '8/28'], correctIndex: 1, hint: 'Common denominator is 28. 2/7 = 8/28, 3/4 = 21/28. Add: 29/28' },
   { id: 'dq3', text: '1/2 + 2/3 = ?', options: ['3/5', '5/6', '7/6', '4/6'], correctIndex: 2, hint: 'Common denominator is 6. 1/2 = 3/6, 2/3 = 4/6. Add: 7/6' },
   { id: 'dq4', text: '3/8 + 1/4 = ?', options: ['4/12', '5/8', '4/8', '7/8'], correctIndex: 1, hint: 'Common denominator is 8. 1/4 = 2/8. Add: 3+2 = 5/8' },
-  { id: 'dq5', text: '5/6 + 1/2 = ?', options: ['6/8', '4/3', '7/6', '8/6'], correctIndex: 2, hint: '1/2 = 3/6, so 5/6 + 3/6 = 8/6' },
+  { id: 'dq5', text: '5/6 + 1/2 = ?', options: ['6/8', '4/3', '7/6', '8/6'], correctIndex: 3, hint: '1/2 = 3/6, so 5/6 + 3/6 = 8/6' },
 ];
 
 // ================================================================
@@ -293,23 +293,35 @@ body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1565C0
 </div>
 
 <script>
-let playing=false,waveInterval;
+let playing=false,waveInterval,audioEl=null,audioLoaded=false;
 // Build waveform bars
 const wf=document.getElementById('waveform');
 for(let i=0;i<40;i++){const b=document.createElement('div');b.className='wave-bar';b.style.height='8px';wf.appendChild(b);}
 const bars=document.querySelectorAll('.wave-bar');
 
-function togglePlay(){
-playing=!playing;
+const narrationScript="Hey Maya! It's Ryder from Paw Patrol here! Today we're going to learn about adding fractions together, and the pups are going to help us! Imagine Chase and Marshall are sharing dog treats. If Chase has 4 out of 5 treats in one bowl, that's four fifths. And if Marshall has 1 out of 3 treats in another bowl, that's one third. To add these fractions together, we need to make sure the pieces are the same size. We call this finding a common denominator. For 5 and 3, both go into 15. So four fifths becomes twelve fifteenths, and one third becomes five fifteenths. Now we can add them: 12 fifteenths plus 5 fifteenths equals 17 fifteenths! That's more than one whole! No job is too big, no pup is too small! You've got this, Maya!";
+
+async function togglePlay(){
 const btn=document.getElementById('playBtn');
-if(playing){btn.textContent='⏸';btn.classList.add('playing');animateWave();}
-else{btn.textContent='▶';btn.classList.remove('playing');clearInterval(waveInterval);bars.forEach(b=>b.style.height='8px');}
+if(playing&&audioEl){audioEl.pause();playing=false;btn.textContent='▶';btn.classList.remove('playing');clearInterval(waveInterval);bars.forEach(b=>b.style.height='8px');return;}
+if(!audioLoaded){
+btn.textContent='...';btn.disabled=true;
+try{
+const res=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:narrationScript})});
+if(res.ok){const blob=await res.blob();audioEl=new Audio(URL.createObjectURL(blob));audioLoaded=true;
+audioEl.onended=()=>{playing=false;btn.textContent='▶';btn.classList.remove('playing');clearInterval(waveInterval);bars.forEach(b=>b.style.height='8px');};
+}else{throw new Error('TTS failed');}
+}catch(e){console.error(e);btn.textContent='▶';btn.disabled=false;return;}
+btn.disabled=false;
+}
+audioEl.play();playing=true;btn.textContent='⏸';btn.classList.add('playing');animateWave();
 }
 function animateWave(){
 waveInterval=setInterval(()=>{bars.forEach(b=>{b.style.height=(4+Math.random()*32)+'px';});},150);
 }
 function setSpeed(s){
 document.querySelectorAll('.speed-btn').forEach(b=>{b.classList.remove('active');if(b.textContent===s+'x')b.classList.add('active');});
+if(audioEl)audioEl.playbackRate=s;
 }
 const responses={
 'common denominator':'Great question! A common denominator is a number that both bottom numbers can divide into evenly. For 5 and 3, the smallest common denominator is 15 because both 5 and 3 divide evenly into 15!',

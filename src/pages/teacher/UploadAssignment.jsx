@@ -195,6 +195,13 @@ export default function UploadAssignment() {
                 Load Demo (instant)
               </button>
               <button
+                className="btn btn-secondary"
+                onClick={() => window.open('/demo', '_blank')}
+                style={{ background: '#E6FFFA', color: '#0D9488', border: '1.5px solid #0D9488' }}
+              >
+                Student Demo View
+              </button>
+              <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
                 disabled={loading}
@@ -607,7 +614,7 @@ function VisualPreview({ preview, character }) {
           <iframe
             title="Visual lesson preview"
             srcDoc={preview.interactiveHtml}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             style={{
               width: '100%', minHeight: 600, border: '2px solid #C4B5FD',
               borderRadius: 10, background: '#fff',
@@ -641,7 +648,7 @@ function AuditoryPreview({ preview, character }) {
           <iframe
             title="Auditory lesson preview"
             srcDoc={preview.interactiveHtml}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             style={{
               width: '100%', minHeight: 600, border: '2px solid #5EEAD4',
               borderRadius: 10, background: '#fff',
@@ -724,7 +731,7 @@ function KinestheticPreview({ preview, character }) {
           <iframe
             title="Interactive lesson preview"
             srcDoc={preview.interactiveHtml}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
             style={{
               width: '100%', minHeight: 600, border: '2px solid #FCA5A5',
               borderRadius: 10, background: '#fff',

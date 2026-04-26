@@ -396,7 +396,7 @@ export default function CuratedLesson() {
             <iframe
               title="Interactive lesson"
               srcDoc={adaptedVersion.interactiveHtml}
-              sandbox="allow-scripts"
+              sandbox="allow-scripts allow-same-origin"
               style={{
                 width: '100%', minHeight: 600, border: '2px solid var(--border-md)',
                 borderRadius: 10, marginBottom: 14, background: '#fff',

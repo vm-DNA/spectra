@@ -7,7 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { parseFile } = require('./parseFile');
 const { adaptLesson, generateReframe, tutorChat, resolveAiRuntime } = require('./gemma');
-const { searchCloudinaryByTag, listCloudinaryTags } = require('./media');
+const { searchCloudinaryByTag, listCloudinaryTags, synthesizeElevenLabsAudio } = require('./media');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -170,6 +170,25 @@ app.get('/api/cloudinary/images/:tag', async (req, res) => {
     res.json({ images, tag: req.params.tag });
   } catch (err) {
     res.status(500).json({ error: 'Failed to search Cloudinary images' });
+  }
+});
+
+// ─── Text-to-Speech via ElevenLabs ──────────────────────────────────────
+app.post('/api/tts', async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: 'text is required' });
+
+    const result = await synthesizeElevenLabsAudio(text.slice(0, 2000));
+    if (result.skipped) {
+      return res.status(503).json({ error: result.reason });
+    }
+
+    res.set('Content-Type', result.contentType);
+    res.send(result.buffer);
+  } catch (err) {
+    console.error('TTS error:', err.message);
+    res.status(500).json({ error: 'Failed to generate audio' });
   }
 });
 

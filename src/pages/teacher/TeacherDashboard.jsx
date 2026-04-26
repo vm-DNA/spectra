@@ -11,6 +11,20 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
   const [enrolledStudents, setEnrolledStudents] = useState([]);
+  const [liveFrustration, setLiveFrustration] = useState([]);
+
+  // Poll for live frustration events from student demo view
+  useEffect(() => {
+    const poll = () => {
+      try {
+        const stored = localStorage.getItem('spectra_live_frustration');
+        if (stored) setLiveFrustration(JSON.parse(stored));
+      } catch {}
+    };
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const teacherName = userProfile?.name || TEACHER.name;
   const teacherRoom = userProfile?.room || TEACHER.room;
@@ -158,11 +172,22 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Frustration Flags — recent AI interventions */}
-      {DEMO_FRUSTRATION_EVENTS.length > 0 && (
+      {(DEMO_FRUSTRATION_EVENTS.length > 0 || liveFrustration.length > 0) && (
         <div>
-          <div className="card-title" style={{ marginBottom: 10 }}>Frustration Flags</div>
+          <div className="card-title" style={{ marginBottom: 10 }}>
+            Frustration Flags
+            {liveFrustration.length > 0 && (
+              <span style={{
+                marginLeft: 8, padding: '2px 8px', borderRadius: 10,
+                background: 'var(--coral-light)', color: 'var(--coral)',
+                fontSize: 11, fontWeight: 700,
+              }}>
+                {liveFrustration.length} LIVE
+              </span>
+            )}
+          </div>
           <div className="stack" style={{ gap: 6 }}>
-            {DEMO_FRUSTRATION_EVENTS.map(evt => (
+            {[...liveFrustration, ...DEMO_FRUSTRATION_EVENTS].map(evt => (
               <div key={evt.id} className="card" style={{
                 padding: '10px 14px',
                 borderLeft: `3px solid ${evt.severity === 'high' ? 'var(--coral)' : 'var(--amber)'}`,

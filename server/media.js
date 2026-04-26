@@ -255,6 +255,7 @@ async function generateVisualLessonWithCloudinary({ prompt, studentId, studentNa
 module.exports = {
   generateAndUploadLessonImageSet,
   generateAndUploadLessonAudio,
+  synthesizeElevenLabsAudio,
   searchCloudinaryByTag,
   listCloudinaryTags,
   generateVisualLessonWithCloudinary,

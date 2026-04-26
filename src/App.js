@@ -24,6 +24,7 @@ import CuratedLesson     from './pages/student/CuratedLesson';
 import AutoReframe       from './pages/student/AutoReframe';
 import CompletionScreen  from './pages/student/CompletionScreen';
 import StudentSettings   from './pages/student/StudentSettings';
+import DemoStudentView   from './pages/student/DemoStudentView';
 
 // Layout wrappers
 import TeacherLayout from './components/TeacherLayout';
@@ -52,6 +53,7 @@ function AppRoutes() {
     <Routes>
       {/* Shared landing */}
       <Route path="/"        element={<Landing />} />
+      <Route path="/demo"    element={<DemoStudentView />} />
 
       {/* Teacher auth */}
       <Route path="/teacher/login"   element={<TeacherLogin />} />
