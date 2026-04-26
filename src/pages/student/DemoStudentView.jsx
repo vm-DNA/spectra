@@ -293,45 +293,10 @@ export default function DemoStudentView() {
             <div style={{ fontSize: 11, color: modeStyle.color }}>{mode} Mode · {character}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Frustration meter */}
-          <div style={{ textAlign: 'right' }}>
-            <div style={{
-              fontSize: 10, color: frustrationScore >= 70 ? '#DC2626' : frustrationScore >= 40 ? '#F59E0B' : '#10B981',
-              fontWeight: 600,
-            }}>
-              Frustration: {frustrationScore}
-            </div>
-            <div style={{
-              width: 80, height: 6, background: '#e5e7eb', borderRadius: 3, overflow: 'hidden',
-            }}>
-              <div style={{
-                width: `${frustrationScore}%`, height: '100%', borderRadius: 3,
-                background: frustrationScore >= 70 ? '#DC2626' : frustrationScore >= 40 ? '#F59E0B' : '#10B981',
-                transition: 'all 0.3s',
-              }} />
-            </div>
-          </div>
-        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} />
       </div>
 
-      {/* Reframe banner */}
-      {reframeTriggered && (
-        <div style={{
-          background: '#FEF2F2', borderBottom: '2px solid #FECACA',
-          padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10,
-        }}>
-          <span style={{ fontSize: 20 }}>⚠️</span>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 13, color: '#991B1B' }}>
-              Frustration Detected — Auto-Reframe Triggered
-            </div>
-            <div style={{ fontSize: 12, color: '#B91C1C' }}>
-              The lesson has been simplified. Teacher has been notified.
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Main content: lesson + chat side by side */}
       <div style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden' }}>
@@ -385,14 +350,7 @@ export default function DemoStudentView() {
             fontWeight: 600, fontSize: 14, color: modeStyle.color,
           }}>
             {mode === 'Auditory' ? '🎙️' : '💬'} {mode === 'Auditory' ? `Talk to ${character}` : `Chat with ${character}`}
-            {frustrationEvents.length > 0 && (
-              <span style={{
-                marginLeft: 8, padding: '2px 6px', borderRadius: 8,
-                background: '#FEF2F2', color: '#DC2626', fontSize: 10, fontWeight: 700,
-              }}>
-                {frustrationEvents.length} alert{frustrationEvents.length > 1 ? 's' : ''}
-              </span>
-            )}
+
           </div>
 
           {/* Chat messages */}
@@ -435,22 +393,7 @@ export default function DemoStudentView() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Frustration events log */}
-          {frustrationEvents.length > 0 && (
-            <div style={{
-              borderTop: '1px solid #e5e7eb', padding: 8, maxHeight: 120, overflowY: 'auto',
-              background: '#FEF2F2',
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#991B1B', marginBottom: 4 }}>
-                FRUSTRATION LOG
-              </div>
-              {frustrationEvents.map((evt, i) => (
-                <div key={i} style={{ fontSize: 10, color: '#B91C1C', marginBottom: 2 }}>
-                  • {evt.trigger} (score: {evt.frustrationScore})
-                </div>
-              ))}
-            </div>
-          )}
+
 
           {/* Speaking indicator */}
           {isSpeaking && (
