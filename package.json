@@ -4,7 +4,9 @@
   "private": true,
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "cloudinary": "^2.10.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "firebase": "^12.12.1",
     "multer": "^2.1.1",
@@ -17,8 +19,8 @@
   },
   "proxy": "http://localhost:3001",
   "scripts": {
-    "start": "concurrently \"react-scripts start\" \"node server/index.js\"",
-    "start:client": "react-scripts start",
+    "start": "concurrently \"npm run start:client\" \"npm run start:server\"",
+    "start:client": "unset HOST && DANGEROUSLY_DISABLE_HOST_CHECK=true react-scripts start",
     "start:server": "node server/index.js",
     "build": "react-scripts build"
   },

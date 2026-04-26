@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { STUDENTS, ASSIGNMENTS } from '../../lib/mockData';
 import { Alert } from '../../components/UI';
-import { adaptLesson, extractTextFromFile } from '../../lib/geminiClient';
+import { adaptLesson } from '../../lib/gemmaApi';
 import { useLessonContext } from '../../lib/LessonContext';
 
 const SUBJECTS = ['Math', 'Reading', 'Science', 'Social Skills', 'Writing'];
@@ -25,14 +25,9 @@ export default function UploadAssignment() {
     setLoading(true);
     setError(null);
     try {
-      let rawContent = content || '';
+      const rawContent = content || '';
 
-      if (file) {
-        const extractedText = await extractTextFromFile(file);
-        rawContent = rawContent ? `${rawContent}\n\n${extractedText}` : extractedText;
-      }
-
-      if (!rawContent.trim()) {
+      if (!rawContent.trim() && !file) {
         setError('Please provide lesson content or upload a file.');
         return;
       }
@@ -50,7 +45,12 @@ export default function UploadAssignment() {
         frustrationTriggers: s.frustrationTriggers,
       }));
 
-      const result = await adaptLesson(rawContent, subject, studentsPayload);
+      const result = await adaptLesson({
+        file,
+        rawContent,
+        subject,
+        students: studentsPayload,
+      });
 
       setAdaptedVersions(result);
       localStorage.setItem('spectra_adapted_lesson', JSON.stringify(result));
@@ -251,8 +251,22 @@ export default function UploadAssignment() {
             marginTop: 12, background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
             padding: 12, fontSize: 12, color: 'var(--teal-dark)',
           }}>
-            📷 Cloudinary — themed character image will load here
-            {preview?.cloudinaryPrompt && ` (${preview.cloudinaryPrompt})`}
+            {preview?.imageUrl ? (
+              <div>
+                <div style={{ marginBottom: 8 }}>📷 Cloudinary image ready</div>
+                <img
+                  src={preview.imageUrl}
+                  alt="Lesson visual"
+                  style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }}
+                />
+              </div>
+            ) : (
+              <>
+                📷 Cloudinary image pending
+                {preview?.cloudinaryPrompt && ` (${preview.cloudinaryPrompt})`}
+                {preview?.imageStatus ? ` — ${preview.imageStatus}` : ''}
+              </>
+            )}
           </div>
 
           {/* ElevenLabs audio */}
@@ -260,7 +274,19 @@ export default function UploadAssignment() {
             marginTop: 8, background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
             padding: 12, fontSize: 12, color: 'var(--blue-dark)',
           }}>
-            🔊 ElevenLabs — narration audio will auto-play in auditory mode
+            {preview?.audioUrl ? (
+              <div>
+                <div style={{ marginBottom: 8 }}>🔊 ElevenLabs narration ready</div>
+                <audio controls src={preview.audioUrl} style={{ width: '100%' }}>
+                  Your browser does not support audio playback.
+                </audio>
+              </div>
+            ) : (
+              <>
+                🔊 ElevenLabs narration pending
+                {preview?.audioStatus ? ` — ${preview.audioStatus}` : ''}
+              </>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

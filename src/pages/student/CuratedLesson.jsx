@@ -4,9 +4,10 @@ import { getAssignment, getStudent } from '../../lib/mockData';
 import { useFrustration } from '../../lib/useFrustration';
 import { FrustrationBar, SigRow, TlItem, Alert } from '../../components/UI';
 import { useLessonContext } from '../../lib/LessonContext';
+import { tutorChat } from '../../lib/gemmaApi';
 
 const STUDENT = getStudent('jamie');
-const MODES   = ['Visual', 'Listen', 'Read'];
+const MODES   = ['Visual', 'Listen', 'Read', 'Kinesthetic'];
 
 export default function CuratedLesson() {
   const { assignmentId } = useParams();
@@ -40,6 +41,11 @@ export default function CuratedLesson() {
   const [qIndex, setQIndex]     = useState(0);
   const [selected, setSelected] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [visualMood, setVisualMood] = useState('neutral');
+  const [tutorInput, setTutorInput] = useState('');
+  const [tutorReply, setTutorReply] = useState('');
+  const [highlightTerms, setHighlightTerms] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
   const [adaptLog, setAdaptLog] = useState([
     { text: `${STUDENT.characters[0]} visual mode loaded per profile`, time: '9:02 AM', color: 'var(--teal)' },
   ]);
@@ -62,12 +68,35 @@ export default function CuratedLesson() {
 
   const frustration = useFrustration({ onFrustrationTriggered });
 
+  const imageMap = adaptedVersion?.imageUrls || {};
+  const visualImage =
+    imageMap[visualMood] ||
+    adaptedVersion?.imageUrl ||
+    imageMap.neutral ||
+    null;
+
+  const highlightText = (text) => {
+    if (!text) return null;
+    const terms = (highlightTerms || []).filter(Boolean);
+    if (!terms.length) return text;
+
+    const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = new RegExp(`(${escaped.join('|')})`, 'ig');
+    const parts = String(text).split(pattern);
+
+    return parts.map((part, idx) => {
+      const matched = terms.some(t => t.toLowerCase() === part.toLowerCase());
+      return matched ? <mark key={idx}>{part}</mark> : <span key={idx}>{part}</span>;
+    });
+  };
+
   const handleAnswer = (idx) => {
     frustration.recordClick();
     setSelected(idx);
 
     if (idx === question.correctIndex) {
       setFeedback({ correct: true, text: 'Correct! Great job! 🎉' });
+      setVisualMood('happy');
       frustration.recordCorrectAnswer();
       setAdaptLog(prev => [
         { text: 'Correct answer — encouragement shown', time: 'Now', color: 'var(--teal)' },
@@ -75,6 +104,7 @@ export default function CuratedLesson() {
       ]);
     } else {
       frustration.recordWrongAnswer();
+      setVisualMood('supportive');
       const wrongCount = frustration.wrongAttempts + 1;
 
       // Use Gemma-generated hint if available
@@ -124,9 +154,30 @@ export default function CuratedLesson() {
       setQIndex(q => q + 1);
       setSelected(null);
       setFeedback(null);
+      setVisualMood('neutral');
+      setTutorReply('');
       frustration.reset();
     } else {
       navigate('/student/complete');
+    }
+  };
+
+  const handleTutorAsk = async () => {
+    if (!tutorInput.trim()) return;
+    setChatLoading(true);
+    try {
+      const response = await tutorChat({
+        message: tutorInput.trim(),
+        question,
+        studentProfile: STUDENT,
+      });
+      setTutorReply(response.reply || '');
+      setHighlightTerms(Array.isArray(response.highlightTerms) ? response.highlightTerms : []);
+    } catch (err) {
+      setTutorReply(err.message || 'Could not reach tutor right now.');
+      setHighlightTerms([]);
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -168,18 +219,26 @@ export default function CuratedLesson() {
         {/* Adapted text from Gemma */}
         {adaptedVersion?.adaptedText && (
           <p style={{ fontSize: 13, marginBottom: 12, lineHeight: 1.7 }}>
-            {adaptedVersion.adaptedText}
+            {mode === 'Read' ? highlightText(adaptedVersion.adaptedText) : adaptedVersion.adaptedText}
           </p>
         )}
 
-        {/* Cloudinary image placeholder */}
-        {mode === 'Visual' && (
+        {/* Cloudinary visual modes */}
+        {(mode === 'Visual' || mode === 'Kinesthetic') && (
           <div style={{
             background: 'var(--purple-light)', borderRadius: 'var(--radius-sm)',
             padding: 12, textAlign: 'center', fontSize: 12, color: 'var(--purple-dark)',
             marginBottom: 12,
           }}>
-            📷 Cloudinary themed image — {STUDENT.characters[0]} illustration here
+            {visualImage ? (
+              <img
+                src={visualImage}
+                alt={`${STUDENT.characters[0]} themed lesson visual`}
+                style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }}
+              />
+            ) : (
+              <>📷 Cloudinary themed image — {STUDENT.characters[0]} illustration here</>
+            )}
           </div>
         )}
 
@@ -190,7 +249,46 @@ export default function CuratedLesson() {
             padding: 12, textAlign: 'center', fontSize: 12, color: 'var(--blue-dark)',
             marginBottom: 12,
           }}>
-            🔊 ElevenLabs — narrating question now...
+            {adaptedVersion?.audioUrl ? (
+              <audio controls autoPlay src={adaptedVersion.audioUrl} style={{ width: '100%' }}>
+                Your browser does not support audio playback.
+              </audio>
+            ) : (
+              <>🔊 ElevenLabs — narrating question now...</>
+            )}
+            <div style={{ marginTop: 10, textAlign: 'left' }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Talk to tutor</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="input"
+                  value={tutorInput}
+                  onChange={e => setTutorInput(e.target.value)}
+                  placeholder="Ask for help in your own words..."
+                />
+                <button className="btn btn-primary btn-sm" onClick={handleTutorAsk} disabled={chatLoading}>
+                  {chatLoading ? 'Asking...' : 'Ask'}
+                </button>
+              </div>
+              {tutorReply && (
+                <div style={{ marginTop: 8, fontSize: 12 }}>
+                  {tutorReply}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {mode === 'Kinesthetic' && adaptedVersion?.interactivePlan?.length > 0 && (
+          <div style={{
+            background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
+            padding: 12, marginBottom: 12, fontSize: 12, color: 'var(--teal-dark)',
+          }}>
+            <div style={{ fontWeight: 600, marginBottom: 6 }}>Interactive mini-steps</div>
+            {adaptedVersion.interactivePlan.map((step, idx) => (
+              <div key={step.step || idx} style={{ marginBottom: 4 }}>
+                {idx + 1}. {step.instruction}
+              </div>
+            ))}
           </div>
         )}
 

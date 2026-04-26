@@ -1,13 +1,29 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { parseFile } = require('./parseFile');
-const { adaptLesson, generateReframe } = require('./gemma');
+const { adaptLesson, generateReframe, tutorChat, resolveAiRuntime } = require('./gemma');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const DEBUG_AI = process.env.DEBUG_AI === 'true';
+
+function makeRequestId() {
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function compactError(err) {
+  return {
+    name: err?.name || null,
+    message: err?.message || null,
+    code: err?.code || err?.cause?.code || null,
+    cause: err?.cause?.message || null,
+  };
+}
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:3000' }));
@@ -36,6 +52,7 @@ const upload = multer({
 app.post('/api/adapt-lesson', upload.single('file'), async (req, res) => {
   let extractedText = '';
   const uploadedFile = req.file;
+  const requestId = makeRequestId();
 
   try {
     // 1. Parse uploaded file if present
@@ -66,11 +83,35 @@ app.post('/api/adapt-lesson', upload.single('file'), async (req, res) => {
 
     // 3. Call Gemma to adapt the lesson
     const adapted = await adaptLesson(combinedText, subject, students);
+    const studentCount = Object.keys(adapted || {}).length;
 
-    return res.json(adapted);
+    return res.json({
+      schemaVersion: '2',
+      requestId,
+      subject,
+      studentCount,
+      results: adapted,
+    });
   } catch (err) {
-    console.error('adapt-lesson error:', err);
-    return res.status(500).json({ error: 'Failed to adapt lesson. Is the Gemma/Ollama server running?' });
+    const runtime = resolveAiRuntime();
+    const errorPayload = {
+      requestId,
+      error: 'Failed to adapt lesson. Check GOOGLE_API_KEY and GOOGLE_MODEL configuration.',
+      provider: runtime.provider,
+      model: runtime.model,
+    };
+
+    if (DEBUG_AI) {
+      errorPayload.debug = compactError(err);
+    }
+
+    console.error(`[${requestId}] adapt-lesson error:`, {
+      ...compactError(err),
+      provider: runtime.provider,
+      model: runtime.model,
+    });
+
+    return res.status(500).json(errorPayload);
   } finally {
     // 4. Clean up uploaded file
     if (uploadedFile && fs.existsSync(uploadedFile.path)) {
@@ -92,7 +133,23 @@ app.post('/api/reframe', async (req, res) => {
     return res.json(reframed);
   } catch (err) {
     console.error('reframe error:', err);
-    return res.status(500).json({ error: 'Failed to generate reframe. Is the Gemma/Ollama server running?' });
+    return res.status(500).json({ error: 'Failed to generate reframe. Check Google AI configuration.' });
+  }
+});
+
+// ─── POST /api/tutor-chat ───────────────────────────────────────────────
+app.post('/api/tutor-chat', async (req, res) => {
+  try {
+    const { message, question, studentProfile } = req.body;
+    if (!message || !question || !studentProfile) {
+      return res.status(400).json({ error: 'message, question, and studentProfile are required.' });
+    }
+
+    const response = await tutorChat({ message, question, studentProfile });
+    return res.json(response);
+  } catch (err) {
+    console.error('tutor-chat error:', err);
+    return res.status(500).json({ error: 'Failed to generate tutor response.' });
   }
 });
 
@@ -101,6 +158,58 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/health/ai', (_req, res) => {
+  const runtime = resolveAiRuntime();
+  res.json({
+    status: runtime.ready ? 'ok' : 'not_ready',
+    provider: runtime.provider,
+    model: runtime.model,
+    mode: runtime.mode || 'explicit',
+    baseUrl: runtime.baseUrl || null,
+    apiKeyConfigured: Boolean(runtime.apiKeyConfigured),
+  });
+});
+
+// Temporary diagnostics endpoint for outbound API connectivity.
+app.get('/api/debug/network', async (_req, res) => {
+  const startedAt = Date.now();
+  const check = async (url) => {
+    try {
+      const result = await fetch(url, { method: 'HEAD' });
+      return { ok: true, status: result.status };
+    } catch (err) {
+      return { ok: false, ...compactError(err) };
+    }
+  };
+
+  const [google, cloudinary, elevenLabs] = await Promise.all([
+    check('https://generativelanguage.googleapis.com'),
+    check('https://api.cloudinary.com'),
+    check('https://api.elevenlabs.io'),
+  ]);
+
+  res.json({
+    elapsedMs: Date.now() - startedAt,
+    google,
+    cloudinary,
+    elevenLabs,
+  });
+});
+
 app.listen(PORT, () => {
+  if (DEBUG_AI) {
+    const runtime = resolveAiRuntime();
+    console.log('[AI DEBUG] startup', {
+      provider: runtime.provider,
+      model: runtime.model,
+      ready: runtime.ready,
+      apiKeyConfigured: runtime.apiKeyConfigured,
+      hasCloudinary:
+        Boolean(process.env.CLOUDINARY_CLOUD_NAME) &&
+        Boolean(process.env.CLOUDINARY_API_KEY) &&
+        Boolean(process.env.CLOUDINARY_API_SECRET),
+      hasElevenLabs: Boolean(process.env.ELEVENLABS_API_KEY),
+    });
+  }
   console.log(`Spectra API server running on http://localhost:${PORT}`);
 });
