@@ -4,7 +4,7 @@ let _model = null;
 function getModel() {
   if (!_model) {
     const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
-    _model = genAI.getGenerativeModel({ model: 'gemma-3-12b-it' });
+    _model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
   return _model;
 }

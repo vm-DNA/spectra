@@ -1,6 +1,6 @@
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'auto').toLowerCase();
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
-const GOOGLE_MODEL = process.env.GOOGLE_MODEL || process.env.GEMINI_MODEL || 'gemma-3-12b-it';
+const GOOGLE_MODEL = process.env.GOOGLE_MODEL || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const { generateAndUploadLessonImageSet, generateAndUploadLessonAudio, generateVisualLessonWithCloudinary } = require('./media');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
