@@ -42,7 +42,7 @@ export default function CuratedLesson() {
   const [gemmaLesson, setGemmaLesson] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('spectra_adapted_lesson');
+    const stored = localStorage.getItem('luminary_adapted_lesson');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);

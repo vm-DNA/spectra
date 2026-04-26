@@ -256,5 +256,5 @@ app.listen(PORT, () => {
       hasClaude: Boolean(process.env.ANTHROPIC_API_KEY),
     });
   }
-  console.log(`Spectra API server running on http://localhost:${PORT}`);
+  console.log(`Luminary API server running on http://localhost:${PORT}`);
 });

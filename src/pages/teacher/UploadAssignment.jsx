@@ -80,7 +80,7 @@ export default function UploadAssignment() {
       });
       setGeneratingStudents(finalStatus);
       setAdaptedVersions(result);
-      localStorage.setItem('spectra_adapted_lesson', JSON.stringify(result));
+      localStorage.setItem('luminary_adapted_lesson', JSON.stringify(result));
       setSubmitted(true);
       // Auto-select first student
       if (targetStudents.length > 0) setSelectedStudent(targetStudents[0].id);
@@ -122,7 +122,7 @@ export default function UploadAssignment() {
     DEMO_STUDENTS.forEach(s => { demoStatus[s.id] = 'ready'; });
     setGeneratingStudents(demoStatus);
     setAdaptedVersions(DEMO_ADAPTED_LESSONS);
-    localStorage.setItem('spectra_adapted_lesson', JSON.stringify(DEMO_ADAPTED_LESSONS));
+    localStorage.setItem('luminary_adapted_lesson', JSON.stringify(DEMO_ADAPTED_LESSONS));
     setSubmitted(true);
     setSelectedStudent(DEMO_STUDENTS[0].id);
   };

@@ -1,4 +1,4 @@
-# Spectra — AI-Powered Special Education Platform
+# Luminary — AI-Powered Special Education Platform
 
 > Hackathon project: adaptive learning tool for special education teachers and students with autism.
 > Built with React + React Router. AI stack: Gemma (lesson adaptation), Cloudinary (images), ElevenLabs (audio).
