@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 
 const express = require('express');
 const cors = require('cors');
@@ -209,6 +209,7 @@ app.listen(PORT, () => {
         Boolean(process.env.CLOUDINARY_API_KEY) &&
         Boolean(process.env.CLOUDINARY_API_SECRET),
       hasElevenLabs: Boolean(process.env.ELEVENLABS_API_KEY),
+      hasClaude: Boolean(process.env.ANTHROPIC_API_KEY),
     });
   }
   console.log(`Spectra API server running on http://localhost:${PORT}`);

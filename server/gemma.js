@@ -1,10 +1,13 @@
 const AI_PROVIDER = (process.env.AI_PROVIDER || 'auto').toLowerCase();
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
 const GOOGLE_MODEL = process.env.GOOGLE_MODEL || process.env.GEMINI_MODEL || 'gemma-3-12b-it';
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const { generateAndUploadLessonImageSet, generateAndUploadLessonAudio } = require('./media');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Anthropic = ANTHROPIC_API_KEY ? require('@anthropic-ai/sdk') : null;
 
 const genAI = GOOGLE_API_KEY ? new GoogleGenerativeAI(GOOGLE_API_KEY) : null;
+const anthropicClient = (Anthropic && ANTHROPIC_API_KEY) ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 const DEBUG_AI = process.env.DEBUG_AI === 'true';
 
 function compactError(err) {
@@ -38,6 +41,7 @@ function resolveAiRuntime() {
     apiKeyConfigured: Boolean(GOOGLE_API_KEY),
     ready: Boolean(genAI),
     mode: AI_PROVIDER,
+    hasClaude: Boolean(anthropicClient),
   };
 }
 
@@ -355,6 +359,93 @@ function getModalityInstructions(primaryStyle, student) {
 }
 
 /**
+ * Use Claude to generate rich interactive HTML for kinesthetic learners.
+ * Claude is much better than Gemma at generating complex interactive HTML/CSS/JS.
+ */
+async function generateKinestheticHtmlWithClaude(rawText, subject, student) {
+  if (!anthropicClient) {
+    logAiDebug('claude_skip', { reason: 'no_anthropic_key' });
+    return null;
+  }
+
+  const character = (student.characters || ['the character'])[0];
+  const prompt = `You are building an interactive learning lesson for a special education student with autism.
+
+Student: ${student.name}, Grade: ${student.grade}
+Favorite character: ${character}
+Subject: ${subject}
+Sensory preferences: ${(student.sensoryPrefs || []).join(', ')}
+Frustration triggers: ${(student.frustrationTriggers || []).join(', ')}
+
+WORKSHEET CONTENT TO TEACH:
+${rawText}
+
+Build a COMPLETE, standalone HTML document that TEACHES the student how to solve these problems through hands-on interaction. This is for a kinesthetic learner — they learn by DOING, not reading.
+
+REQUIREMENTS:
+1. VISUAL TEACHING SECTION (comes first):
+   - Animated fraction bar visualizations using SVG or CSS that show fractions being added
+   - For example: two bars side by side, colored segments representing numerator/denominator, then an animation showing them combining
+   - Step-by-step walkthrough of ONE example problem with animated transitions between steps
+   - Each step should have a "Next" button and smooth CSS transitions
+
+2. INTERACTIVE SLIDERS:
+   - Range sliders that let the student set numerator and denominator values
+   - As the student drags, a fraction bar or pie chart updates in real-time
+   - Labels showing the current fraction value
+
+3. DRAG-AND-DROP PRACTICE:
+   - For each worksheet problem, show fraction pieces that the student can click/drag to combine
+   - Visual feedback when pieces are combined (color change, animation)
+   - Check answer button with immediate visual feedback (green glow for correct, gentle shake for incorrect)
+
+4. SCORE TRACKING & PROGRESS:
+   - Progress bar at the top showing how many problems completed
+   - Score counter
+   - Celebration animation (confetti particles using CSS/JS) when all problems are completed
+   - Encouraging messages themed to ${character}
+
+5. CHARACTER THEMING:
+   - Use ${character}'s color scheme and visual style throughout
+   - Character speech bubbles with encouraging messages at key moments
+   - ${character}-themed backgrounds and decorations
+
+TECHNICAL REQUIREMENTS:
+- MUST be a complete HTML document with <!DOCTYPE html>, <html>, <head>, <body>
+- ALL CSS must be inline in a <style> tag (no external stylesheets)
+- ALL JavaScript must be inline in a <script> tag (no external libraries)
+- Must work inside an iframe with sandbox="allow-scripts"
+- Use CSS animations and transitions for smooth, engaging interactions
+- Mobile-friendly layout (flexbox/grid)
+- Minimum 400 lines of code — this should be a RICH, full interactive lesson
+- Use modern CSS (gradients, shadows, animations, transitions)
+- Make it colorful, engaging, and fun for a child
+
+Return ONLY the complete HTML document. No markdown, no code fences, no explanation — just the raw HTML starting with <!DOCTYPE html>.`;
+
+  try {
+    logAiDebug('claude_kinesthetic_start', { studentId: student.id, character });
+    const message = await anthropicClient.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const html = message.content[0]?.text || '';
+    if (html.includes('<!DOCTYPE') || html.includes('<html') || html.includes('<div')) {
+      logAiDebug('claude_kinesthetic_success', { studentId: student.id, htmlLength: html.length });
+      return html;
+    }
+    logAiDebug('claude_kinesthetic_no_html', { studentId: student.id, responseLength: html.length });
+    return null;
+  } catch (err) {
+    logAiDebug('claude_kinesthetic_error', { studentId: student.id, error: compactError(err) });
+    console.error('Claude kinesthetic generation failed:', err.message);
+    return null;
+  }
+}
+
+/**
  * Generate adapted lesson content for each student from worksheet text.
  */
 async function adaptLesson(rawText, subject, students) {
@@ -426,7 +517,18 @@ Rules:
 
     try {
       const adapted = await callGemma(prompt);
-      results[student.id] = await attachMedia(normalizeAdaptation(adapted, student, subject), student, subject);
+      let normalized = normalizeAdaptation(adapted, student, subject);
+
+      // For kinesthetic learners, use Claude to generate rich interactive HTML
+      if (primaryStyle === 'Kinesthetic') {
+        const claudeHtml = await generateKinestheticHtmlWithClaude(rawText, subject, student);
+        if (claudeHtml) {
+          normalized.interactiveHtml = claudeHtml;
+          logAiDebug('claude_html_replaced', { studentId: student.id, htmlLength: claudeHtml.length });
+        }
+      }
+
+      results[student.id] = await attachMedia(normalized, student, subject);
     } catch (err) {
       try {
         const repairPrompt = `${prompt}
@@ -434,7 +536,16 @@ Rules:
 Your previous output could not be parsed/validated.
 Return ONLY strict JSON and ensure all required fields exist with correct types.`;
         const repaired = await callGemma(repairPrompt);
-        results[student.id] = await attachMedia(normalizeAdaptation(repaired, student, subject), student, subject);
+        let normalized = normalizeAdaptation(repaired, student, subject);
+
+        if (primaryStyle === 'Kinesthetic') {
+          const claudeHtml = await generateKinestheticHtmlWithClaude(rawText, subject, student);
+          if (claudeHtml) {
+            normalized.interactiveHtml = claudeHtml;
+          }
+        }
+
+        results[student.id] = await attachMedia(normalized, student, subject);
       } catch (retryErr) {
         console.error(`Failed to adapt for student ${student.id}:`, retryErr.message);
         results[student.id] = await attachMedia(fallbackAdaptation(student, subject, retryErr.message), student, subject);

@@ -449,10 +449,11 @@ function StudentPreview({ student, preview, modality, modalMeta }) {
                     <span key={oi} style={{
                       padding: '4px 12px', borderRadius: 6, fontSize: 12,
                       border: '1px solid var(--border-md)',
-                      background: oi === q.correctIndex ? 'var(--teal-light)' : 'transparent',
-                      fontWeight: oi === q.correctIndex ? 600 : 400,
+                      background: 'transparent',
+                      fontWeight: 400,
+                      cursor: 'default',
                     }}>
-                      {opt} {oi === q.correctIndex ? '✓' : ''}
+                      {opt}
                     </span>
                   ))}
                 </div>
