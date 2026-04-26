@@ -104,7 +104,7 @@ export default function TeacherLayout() {
       <nav className="topnav">
         <div className="topnav-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           <div className="topnav-logo-ring" />
-          Spectra
+          Luminary
         </div>
         <div className="topnav-tabs">
           {NAV_ITEMS.map(item => (

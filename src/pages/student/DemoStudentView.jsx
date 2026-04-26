@@ -144,7 +144,7 @@ export default function DemoStudentView() {
   // Persist frustration events to localStorage for teacher dashboard
   useEffect(() => {
     if (frustrationEvents.length > 0) {
-      localStorage.setItem('spectra_live_frustration', JSON.stringify(frustrationEvents));
+      localStorage.setItem('luminary_live_frustration', JSON.stringify(frustrationEvents));
     }
   }, [frustrationEvents]);
 
@@ -251,7 +251,7 @@ export default function DemoStudentView() {
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: 20 }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
           <h1 style={{ color: 'white', fontSize: 28, marginBottom: 8, fontWeight: 700 }}>
-            Spectra Demo — Student View
+            Luminary Demo — Student View
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 14, marginBottom: 24 }}>
             Pick a student to see their personalized lesson

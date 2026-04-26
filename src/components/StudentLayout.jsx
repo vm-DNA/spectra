@@ -38,7 +38,7 @@ export default function StudentLayout() {
           onClick={() => navigate('/student/home')}
         >
           <div style={{ width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--purple)' }} />
-          Spectra
+          Luminary
         </div>
 
         {/* Profile avatar with dropdown */}

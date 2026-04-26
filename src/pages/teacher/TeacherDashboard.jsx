@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
   useEffect(() => {
     const poll = () => {
       try {
-        const stored = localStorage.getItem('spectra_live_frustration');
+        const stored = localStorage.getItem('luminary_live_frustration');
         if (stored) setLiveFrustration(JSON.parse(stored));
       } catch {}
     };

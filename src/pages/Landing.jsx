@@ -15,7 +15,7 @@ export default function Landing() {
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 }}>
           <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2.5px solid var(--teal)' }} />
-          <span style={{ fontSize: 28, fontWeight: 500, color: 'var(--teal)', letterSpacing: '-0.5px' }}>Spectra</span>
+          <span style={{ fontSize: 28, fontWeight: 500, color: 'var(--teal)', letterSpacing: '-0.5px' }}>Luminary</span>
         </div>
         <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Personalized learning for every student</p>
       </div>
@@ -79,7 +79,7 @@ export default function Landing() {
         background: 'var(--surface)', borderRadius: 'var(--radius)',
         border: '1px solid var(--border)', maxWidth: 600, width: '100%',
       }}>
-        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 12 }}>New to Spectra?</div>
+        <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 12 }}>New to Luminary?</div>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
           <button
             className="btn btn-primary"

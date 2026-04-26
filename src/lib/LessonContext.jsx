@@ -5,7 +5,7 @@ const LessonContext = createContext();
 export function LessonProvider({ children }) {
   const [lessons, setLessons] = useState(() => {
     try {
-      const stored = localStorage.getItem('spectra_lessons');
+      const stored = localStorage.getItem('luminary_lessons');
       return stored ? JSON.parse(stored) : {};
     } catch {
       return {};
@@ -16,7 +16,7 @@ export function LessonProvider({ children }) {
     const updated = { ...lessons, [assignmentId]: adaptedVersions };
     setLessons(updated);
     try {
-      localStorage.setItem('spectra_lessons', JSON.stringify(updated));
+      localStorage.setItem('luminary_lessons', JSON.stringify(updated));
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
         const stripped = {};
@@ -27,7 +27,7 @@ export function LessonProvider({ children }) {
         }
         const small = { ...lessons, [assignmentId]: stripped };
         try {
-          localStorage.setItem('spectra_lessons', JSON.stringify(small));
+          localStorage.setItem('luminary_lessons', JSON.stringify(small));
         } catch { /* best effort */ }
       }
     }
@@ -39,7 +39,7 @@ export function LessonProvider({ children }) {
 
   const clearLessons = () => {
     setLessons({});
-    localStorage.removeItem('spectra_lessons');
+    localStorage.removeItem('luminary_lessons');
   };
 
   return (
