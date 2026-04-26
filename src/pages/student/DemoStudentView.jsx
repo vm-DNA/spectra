@@ -375,8 +375,8 @@ export default function DemoStudentView() {
           )}
         </div>
 
-        {/* Chat panel (for all modes except Auditory which has it built-in) */}
-        <div style={{
+        {/* Chat panel (hidden for Auditory — low stimuli, narration only) */}
+        {mode !== 'Auditory' && <div style={{
           width: 320, flexShrink: 0, borderLeft: '1px solid #e5e7eb',
           display: 'flex', flexDirection: 'column', background: 'white',
         }}>
@@ -496,7 +496,7 @@ export default function DemoStudentView() {
               Send
             </button>
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

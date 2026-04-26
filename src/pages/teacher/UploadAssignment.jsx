@@ -655,7 +655,7 @@ function AuditoryPreview({ preview, character }) {
             }}
           />
           <div style={{ fontSize: 11, color: '#0D9488', marginTop: 6 }}>
-            Audio player with narration script + voice chat with {character}
+            Audio-only narration by {character} — low stimuli, focused listening
           </div>
         </div>
       ) : preview?.audioUrl ? (
@@ -676,14 +676,7 @@ function AuditoryPreview({ preview, character }) {
           Audio narration will be generated via ElevenLabs
         </div>
       )}
-      {preview?.elevenLabsScript && !preview?.interactiveHtml && (
-        <div style={{
-          background: '#F0FDFA', borderRadius: 8, padding: 12,
-          fontSize: 12, fontStyle: 'italic', color: '#115E59', marginBottom: 12,
-        }}>
-          Narration script: "{preview.elevenLabsScript.slice(0, 300)}{preview.elevenLabsScript.length > 300 ? '...' : ''}"
-        </div>
-      )}
+      {/* Narration script hidden — low stimuli auditory mode */}
     </div>
   );
 }

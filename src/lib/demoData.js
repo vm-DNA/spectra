@@ -219,123 +219,82 @@ const MAYA_AUDITORY_HTML = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1565C0 0%,#42A5F5 100%);min-height:100vh;padding:20px;color:#333}
-.container{max-width:700px;margin:0 auto}
-.header{background:white;border-radius:20px;padding:20px;text-align:center;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
-.header h1{color:#1565C0;font-size:24px;margin-bottom:4px}
-.card{background:white;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
-.audio-player{background:#E3F2FD;border-radius:16px;padding:20px;text-align:center;margin-bottom:12px;border:3px solid #1565C0}
-.play-btn{width:64px;height:64px;border-radius:50%;background:#1565C0;border:none;color:white;font-size:24px;cursor:pointer;transition:all 0.2s;margin:8px}
-.play-btn:hover{background:#0D47A1;transform:scale(1.1)}
-.play-btn.playing{background:#4CAF50;animation:pulse-play 1.5s infinite}
-@keyframes pulse-play{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,0.4)}50%{box-shadow:0 0 0 15px rgba(76,175,80,0)}}
-.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:12px 0}
-.wave-bar{width:4px;background:#1565C0;border-radius:2px;transition:height 0.15s}
-.narration-text{background:#FFFDE7;border-radius:12px;padding:16px;font-size:14px;line-height:1.8;border-left:4px solid #FFC107;max-height:200px;overflow-y:auto}
-.narration-text .highlight{background:#FFF176;padding:1px 4px;border-radius:3px;font-weight:bold}
-.chat-section{margin-top:12px}
-.chat-bubble{padding:10px 16px;border-radius:16px;margin-bottom:8px;font-size:13px;max-width:85%}
-.chat-bubble.ai{background:#E3F2FD;border-bottom-left-radius:4px;color:#1565C0}
-.chat-bubble.user{background:#C8E6C9;border-bottom-right-radius:4px;margin-left:auto;color:#2E7D32}
-.chat-input{display:flex;gap:8px;margin-top:8px}
-.chat-input input{flex:1;padding:10px 14px;border:2px solid #ddd;border-radius:24px;font-size:13px;outline:none}
-.chat-input input:focus{border-color:#1565C0}
-.chat-input button{padding:10px 20px;background:#1565C0;color:white;border:none;border-radius:24px;cursor:pointer;font-weight:bold}
-.speed-controls{display:flex;gap:8px;justify-content:center;margin:8px 0}
-.speed-btn{padding:4px 12px;border-radius:12px;border:1px solid #1565C0;background:white;color:#1565C0;cursor:pointer;font-size:12px}
-.speed-btn.active{background:#1565C0;color:white}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
-.badge-blue{background:#E3F2FD;color:#1565C0}
-.badge-green{background:#E8F5E9;color:#2E7D32}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.container{max-width:480px;width:100%;margin:0 auto}
+.header{text-align:center;margin-bottom:32px}
+.header h1{color:#1565C0;font-size:22px;font-weight:600;margin-bottom:6px}
+.header p{color:#78909C;font-size:13px}
+.player{background:white;border-radius:24px;padding:40px 32px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,0.06)}
+.play-btn{width:80px;height:80px;border-radius:50%;background:#1565C0;border:none;color:white;font-size:28px;cursor:pointer;transition:all 0.2s;margin:0 auto 20px;display:block}
+.play-btn:hover{background:#0D47A1;transform:scale(1.05)}
+.play-btn.playing{background:#2E7D32;animation:pulse-play 1.5s infinite}
+.play-btn:disabled{opacity:0.7;cursor:wait}
+@keyframes pulse-play{0%,100%{box-shadow:0 0 0 0 rgba(46,125,50,0.3)}50%{box-shadow:0 0 0 18px rgba(46,125,50,0)}}
+.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:48px;margin:16px 0}
+.wave-bar{width:4px;background:#90CAF9;border-radius:2px;transition:height 0.15s}
+.status{font-size:14px;color:#546E7F;margin-bottom:16px;font-weight:500}
+.speed-controls{display:flex;gap:8px;justify-content:center;margin-top:20px}
+.speed-btn{padding:6px 16px;border-radius:16px;border:1.5px solid #B0BEC5;background:white;color:#546E7F;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.15s}
+.speed-btn:hover{border-color:#1565C0;color:#1565C0}
+.speed-btn.active{background:#1565C0;color:white;border-color:#1565C0}
+.topic{margin-top:24px;padding:16px 20px;background:#F5F7FA;border-radius:14px;text-align:left}
+.topic-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#90A4AE;font-weight:600;margin-bottom:6px}
+.topic-text{font-size:14px;color:#37474F;line-height:1.5}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#E8F5E9;color:#2E7D32;margin-top:16px}
 </style></head><body>
 <div class="container">
 <div class="header">
-<h1>🐾 Paw Patrol Fraction Lesson</h1>
-<p><span class="badge badge-blue">Auditory Mode</span> Listen and learn with Ryder!</p>
+<h1>Adding Fractions</h1>
+<p>Listen to Ryder explain the lesson</p>
 </div>
 
-<div class="audio-player">
-<div style="font-weight:bold;color:#1565C0;margin-bottom:8px">Ryder's Fraction Lesson</div>
+<div class="player">
 <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
 <div class="waveform" id="waveform"></div>
+<div class="status" id="statusText">Tap to play</div>
 <div class="speed-controls">
 <button class="speed-btn" onclick="setSpeed(0.8)">0.8x</button>
 <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
 <button class="speed-btn" onclick="setSpeed(1.2)">1.2x</button>
 </div>
-<div style="font-size:11px;color:#666;margin-top:4px">
-<span class="badge badge-green">ElevenLabs TTS</span> Duration: 1:40 · Voice: Ryder
+<div class="topic">
+<div class="topic-label">Today's Topic</div>
+<div class="topic-text">Adding fractions with different denominators — finding common denominators, converting, and adding numerators.</div>
 </div>
-</div>
-
-<div class="card">
-<div style="font-weight:bold;color:#1565C0;margin-bottom:8px">📜 Narration Script</div>
-<div class="narration-text" id="narrationText">
-<p>Hey Maya! It's <span class="highlight">Ryder from Paw Patrol</span> here! Today we're going to learn about <span class="highlight">adding fractions</span> together, and the pups are going to help us!</p>
-<p style="margin-top:8px">Imagine <span class="highlight">Chase</span> and <span class="highlight">Marshall</span> are sharing dog treats. If Chase has <span class="highlight">4 out of 5</span> treats in one bowl, that's four-fifths. And if Marshall has <span class="highlight">1 out of 3</span> treats in another bowl, that's one-third.</p>
-<p style="margin-top:8px">To add these fractions together, we need to make sure the <span class="highlight">pieces are the same size</span>. We call this finding a <span class="highlight">common denominator</span>. For 5 and 3, both go into <span class="highlight">15</span>.</p>
-<p style="margin-top:8px">So four-fifths becomes <span class="highlight">twelve-fifteenths</span>, and one-third becomes <span class="highlight">five-fifteenths</span>.</p>
-<p style="margin-top:8px">Now we can add them: <span class="highlight">12/15 + 5/15 = 17/15</span>! That's more than one whole!</p>
-<p style="margin-top:8px"><span class="highlight">No job is too big, no pup is too small!</span> You've got this, Maya!</p>
-</div>
-</div>
-
-<div class="card chat-section">
-<div style="font-weight:bold;color:#1565C0;margin-bottom:8px">💬 Talk to Ryder</div>
-<div id="chatMessages">
-<div class="chat-bubble ai">Hi Maya! I just explained how to add fractions. Do you have any questions? You can ask me anything!</div>
-</div>
-<div class="chat-input">
-<input type="text" id="chatInput" placeholder="Ask Ryder a question..." onkeypress="if(event.key==='Enter')sendChat()">
-<button onclick="sendChat()">Ask</button>
-</div>
+<div class="badge">ElevenLabs Voice: Ryder</div>
 </div>
 </div>
 
 <script>
 let playing=false,waveInterval,audioEl=null,audioLoaded=false;
-// Build waveform bars
 const wf=document.getElementById('waveform');
-for(let i=0;i<40;i++){const b=document.createElement('div');b.className='wave-bar';b.style.height='8px';wf.appendChild(b);}
+for(let i=0;i<50;i++){const b=document.createElement('div');b.className='wave-bar';b.style.height='6px';wf.appendChild(b);}
 const bars=document.querySelectorAll('.wave-bar');
 
 const narrationScript="Hey Maya! It's Ryder from Paw Patrol here! Today we're going to learn about adding fractions together, and the pups are going to help us! Imagine Chase and Marshall are sharing dog treats. If Chase has 4 out of 5 treats in one bowl, that's four fifths. And if Marshall has 1 out of 3 treats in another bowl, that's one third. To add these fractions together, we need to make sure the pieces are the same size. We call this finding a common denominator. For 5 and 3, both go into 15. So four fifths becomes twelve fifteenths, and one third becomes five fifteenths. Now we can add them: 12 fifteenths plus 5 fifteenths equals 17 fifteenths! That's more than one whole! No job is too big, no pup is too small! You've got this, Maya!";
 
 async function togglePlay(){
 const btn=document.getElementById('playBtn');
-if(playing&&audioEl){audioEl.pause();playing=false;btn.textContent='▶';btn.classList.remove('playing');clearInterval(waveInterval);bars.forEach(b=>b.style.height='8px');return;}
+const status=document.getElementById('statusText');
+if(playing&&audioEl){audioEl.pause();playing=false;btn.textContent='▶';btn.classList.remove('playing');status.textContent='Paused';clearInterval(waveInterval);bars.forEach(b=>b.style.height='6px');return;}
 if(!audioLoaded){
-btn.textContent='...';btn.disabled=true;
+btn.textContent='...';btn.disabled=true;status.textContent='Loading audio...';
 try{
 const res=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:narrationScript})});
 if(res.ok){const blob=await res.blob();audioEl=new Audio(URL.createObjectURL(blob));audioLoaded=true;
-audioEl.onended=()=>{playing=false;btn.textContent='▶';btn.classList.remove('playing');clearInterval(waveInterval);bars.forEach(b=>b.style.height='8px');};
+audioEl.onended=()=>{playing=false;btn.textContent='▶';btn.classList.remove('playing');status.textContent='Finished — tap to replay';clearInterval(waveInterval);bars.forEach(b=>b.style.height='6px');};
 }else{throw new Error('TTS failed');}
-}catch(e){console.error(e);btn.textContent='▶';btn.disabled=false;return;}
+}catch(e){console.error(e);btn.textContent='▶';btn.disabled=false;status.textContent='Could not load audio';return;}
 btn.disabled=false;
 }
-audioEl.play();playing=true;btn.textContent='⏸';btn.classList.add('playing');animateWave();
+audioEl.play();playing=true;btn.textContent='⏸';btn.classList.add('playing');status.textContent='Playing...';animateWave();
 }
 function animateWave(){
-waveInterval=setInterval(()=>{bars.forEach(b=>{b.style.height=(4+Math.random()*32)+'px';});},150);
+waveInterval=setInterval(()=>{bars.forEach(b=>{b.style.height=(4+Math.random()*36)+'px';b.style.background=playing?'#1565C0':'#90CAF9';});},120);
 }
 function setSpeed(s){
 document.querySelectorAll('.speed-btn').forEach(b=>{b.classList.remove('active');if(b.textContent===s+'x')b.classList.add('active');});
 if(audioEl)audioEl.playbackRate=s;
-}
-const responses={
-'common denominator':'Great question! A common denominator is a number that both bottom numbers can divide into evenly. For 5 and 3, the smallest common denominator is 15 because both 5 and 3 divide evenly into 15!',
-'help':"Of course I'll help! Which problem are you stuck on? Tell me the fractions and we'll work through it step by step!",
-'hard':"I know fractions can seem tricky at first, but you're doing great! Remember: Step 1 — find the common denominator. Step 2 — convert. Step 3 — add the tops. You've got this!",
-};
-function sendChat(){
-const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;
-const chat=document.getElementById('chatMessages');
-chat.innerHTML+='<div class="chat-bubble user">'+msg+'</div>';
-input.value='';
-const key=Object.keys(responses).find(k=>msg.toLowerCase().includes(k));
-const reply=key?responses[key]:"That's a great question! When adding fractions, always remember to find the common denominator first, then convert both fractions, and finally add the numerators. Would you like me to walk through a specific problem?";
-setTimeout(()=>{chat.innerHTML+='<div class="chat-bubble ai">'+reply+'</div>';chat.scrollTop=chat.scrollHeight;},800);
 }
 </script></body></html>`;
 
