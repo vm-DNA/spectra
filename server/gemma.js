@@ -460,6 +460,87 @@ Return ONLY the complete HTML document. No markdown, no code fences, no explanat
 }
 
 /**
+ * Use Claude to generate rich visual HTML lesson with Cloudinary image placeholders.
+ */
+async function generateVisualHtmlWithClaude(rawText, subject, student) {
+  if (!anthropicClient) {
+    logAiDebug('claude_visual_skip', { reason: 'no_anthropic_key' });
+    return null;
+  }
+
+  const character = (student.characters || ['the character'])[0];
+  const prompt = `You are building a visually rich learning lesson for a special education student with autism.
+
+Student: ${student.name}, Grade: ${student.grade}
+Favorite character: ${character}
+Subject: ${subject}
+Sensory preferences: ${(student.sensoryPrefs || []).join(', ')}
+Frustration triggers: ${(student.frustrationTriggers || []).join(', ')}
+
+WORKSHEET CONTENT TO TEACH:
+${rawText}
+
+Build a COMPLETE, standalone HTML document that teaches using VISUAL elements. This student learns by SEEING images, diagrams, and colorful visual representations.
+
+REQUIREMENTS:
+1. CHARACTER IMAGES — use multiple <img> tags with src="CHARACTER_IMAGE_PLACEHOLDER" (this will be replaced with real Cloudinary URLs of ${character} images). Place images throughout the lesson:
+   - A large hero image at the top
+   - Images next to each problem to illustrate the concept (e.g., show groups of character images to represent multiplication: 3 x 4 = show 3 rows of 4 ${character} images)
+   - Use CSS to resize images appropriately (width: 60-120px for inline, 200px for hero)
+   - Position images using flexbox/grid layouts
+
+2. VISUAL MATH DIAGRAMS:
+   - Use colored CSS blocks, circles, or bars to represent numbers visually
+   - For multiplication: show arrays/groups of colored blocks
+   - For fractions: show pie charts or bar segments
+   - Use bright, engaging colors
+
+3. INTERACTIVE QUIZ:
+   - Each worksheet problem as a visual question card
+   - 4 clickable answer options styled as colorful buttons/cards
+   - Correct answer shows green glow + celebration
+   - Wrong answer shows gentle orange highlight + "Try again!"
+   - Track score and show progress
+
+4. CHARACTER THEMING:
+   - ${character}-themed color scheme throughout
+   - Character speech bubbles with encouraging messages
+   - Fun header with character name
+
+TECHNICAL REQUIREMENTS:
+- MUST be a complete HTML document with <!DOCTYPE html>, <html>, <head>, <body>
+- ALL CSS inline in <style> tag, ALL JS inline in <script> tag
+- Must work inside an iframe with sandbox="allow-scripts"
+- Use CSS animations and transitions
+- Mobile-friendly (flexbox/grid)
+- Minimum 200 lines — visually rich and fun for a child
+- Include MULTIPLE <img> tags with src="CHARACTER_IMAGE_PLACEHOLDER" — at least 4-6 images throughout the lesson
+
+Return ONLY the complete HTML document. No markdown, no code fences — just raw HTML starting with <!DOCTYPE html>.`;
+
+  try {
+    logAiDebug('claude_visual_start', { studentId: student.id, character });
+    const message = await anthropicClient.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 12000,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    const html = message.content[0]?.text || '';
+    if (html.includes('<!DOCTYPE') || html.includes('<html') || html.includes('<div')) {
+      logAiDebug('claude_visual_success', { studentId: student.id, htmlLength: html.length });
+      return html;
+    }
+    logAiDebug('claude_visual_no_html', { studentId: student.id, responseLength: html.length });
+    return null;
+  } catch (err) {
+    logAiDebug('claude_visual_error', { studentId: student.id, error: compactError(err) });
+    console.error('Claude visual generation failed:', err.message);
+    return null;
+  }
+}
+
+/**
  * Generate adapted lesson content for each student from worksheet text.
  */
 async function adaptLesson(rawText, subject, students) {
@@ -503,7 +584,7 @@ Return valid JSON with this exact structure:
   "interactivePlan": [
     { "step": "step_name", "instruction": "instruction for interactive step" }
   ],
-  "interactiveHtml": "${primaryStyle === 'Kinesthetic' ? 'A COMPLETE self-contained HTML document (300+ lines) with inline CSS and JS. MUST include: (1) Animated SVG pie charts or fraction bar visualizations that TEACH fractions visually, (2) Interactive sliders where the student drags to set numerator/denominator and watches the visualization update, (3) A step-by-step guided walkthrough of one example problem with animated transitions, (4) Interactive practice problems where students manipulate visual elements (drag pie slices, fill fraction bars) — NOT just click answer buttons. (5) Score tracking, progress bar, celebration confetti animation on completion. Theme with the character colors and style. Must work in an iframe sandbox with allow-scripts. NO external dependencies.' : 'null'}",
+  "interactiveHtml": "${primaryStyle === 'Kinesthetic' ? 'A COMPLETE self-contained HTML document (300+ lines) with inline CSS and JS. MUST include: (1) Animated SVG pie charts or fraction bar visualizations that TEACH fractions visually, (2) Interactive sliders where the student drags to set numerator/denominator and watches the visualization update, (3) A step-by-step guided walkthrough of one example problem with animated transitions, (4) Interactive practice problems where students manipulate visual elements (drag pie slices, fill fraction bars) — NOT just click answer buttons. (5) Score tracking, progress bar, celebration confetti animation on completion. Theme with the character colors and style. Must work in an iframe sandbox with allow-scripts. NO external dependencies.' : primaryStyle === 'Visual' ? 'A COMPLETE self-contained HTML document with inline CSS. Create a visually rich lesson layout: (1) Large header with character name and lesson title, (2) An <img> tag with src=CHARACTER_IMAGE_PLACEHOLDER that will be replaced with the real Cloudinary image URL, (3) Visual fraction diagrams using colored CSS blocks/bars showing the math concepts, (4) Character-themed styling with colorful borders and backgrounds, (5) Quiz questions with clickable answer options styled as visual cards. Make it look like a fun visual worksheet.' : 'null'}",
   "chatContext": "Context paragraph about the lesson for the chat tutor to reference",
   "confidence": 0.84,
   "questions": [
@@ -542,13 +623,23 @@ Rules:
         }
       }
 
+      // For visual learners, use Claude to generate rich HTML with image placeholders
+      if (primaryStyle === 'Visual') {
+        const claudeHtml = await generateVisualHtmlWithClaude(rawText, subject, student);
+        if (claudeHtml) {
+          normalized.interactiveHtml = claudeHtml;
+          logAiDebug('claude_visual_html_replaced', { studentId: student.id, htmlLength: claudeHtml.length });
+        }
+      }
+
       const withMedia = await attachMedia(normalized, student, subject);
 
       // For Visual learners: replace CHARACTER_IMAGE_PLACEHOLDER with actual Cloudinary URLs
       if (primaryStyle === 'Visual' && withMedia.characterImages && withMedia.interactiveHtml) {
+        let imgIdx = 0;
         withMedia.interactiveHtml = withMedia.interactiveHtml.replace(
           /CHARACTER_IMAGE_PLACEHOLDER/g,
-          withMedia.characterImages[0]
+          () => withMedia.characterImages[imgIdx++ % withMedia.characterImages.length]
         );
       }
 
@@ -568,12 +659,19 @@ Return ONLY strict JSON and ensure all required fields exist with correct types.
             normalized.interactiveHtml = claudeHtml;
           }
         }
+        if (primaryStyle === 'Visual') {
+          const claudeHtml = await generateVisualHtmlWithClaude(rawText, subject, student);
+          if (claudeHtml) {
+            normalized.interactiveHtml = claudeHtml;
+          }
+        }
 
         const withMedia = await attachMedia(normalized, student, subject);
         if (primaryStyle === 'Visual' && withMedia.characterImages && withMedia.interactiveHtml) {
+          let imgIdx = 0;
           withMedia.interactiveHtml = withMedia.interactiveHtml.replace(
             /CHARACTER_IMAGE_PLACEHOLDER/g,
-            withMedia.characterImages[0]
+            () => withMedia.characterImages[imgIdx++ % withMedia.characterImages.length]
           );
         }
         results[student.id] = withMedia;
