@@ -3,6 +3,7 @@ import { STUDENTS, ASSIGNMENTS, PUBLISHED_ASSIGNMENTS } from '../../lib/mockData
 import { Alert, Badge, Avatar, ProgressBar } from '../../components/UI';
 import { adaptLesson, extractTextFromFile } from '../../lib/geminiClient';
 import { useLessonContext } from '../../lib/LessonContext';
+import { DEMO_ADAPTED_LESSONS, DEMO_WORKSHEET, DEMO_FRUSTRATION_EVENTS, DEMO_APPROVED_HISTORY } from '../../lib/demoData';
 
 const SUBJECTS = ['Math', 'Reading', 'Science', 'Social Skills', 'Writing'];
 
@@ -107,6 +108,21 @@ export default function UploadAssignment() {
     setGeneratingStudents({});
   };
 
+  // Demo mode: instantly load pre-generated lessons
+  const handleLoadDemo = () => {
+    setLoading(false);
+    setError(null);
+    setContent(DEMO_WORKSHEET.rawContent);
+    setSubject(DEMO_WORKSHEET.subject);
+    const demoStatus = {};
+    STUDENTS.forEach(s => { demoStatus[s.id] = 'ready'; });
+    setGeneratingStudents(demoStatus);
+    setAdaptedVersions(DEMO_ADAPTED_LESSONS);
+    localStorage.setItem('spectra_adapted_lesson', JSON.stringify(DEMO_ADAPTED_LESSONS));
+    setSubmitted(true);
+    setSelectedStudent(STUDENTS[0].id);
+  };
+
   const preview = adaptedVersions?.[selectedStudent];
   const previewStudentData = STUDENTS.find(s => s.id === selectedStudent);
   const previewModality = previewStudentData?.learningStyles?.[0] || 'Visual';
@@ -168,6 +184,13 @@ export default function UploadAssignment() {
               </select>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={handleLoadDemo}
+                style={{ background: '#F3F0FF', color: '#7C3AED', border: '1.5px solid #7C3AED' }}
+              >
+                Load Demo (instant)
+              </button>
               <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
@@ -302,6 +325,109 @@ export default function UploadAssignment() {
                 <div style={{ fontSize: 13, marginTop: 4 }}>Click on a student to preview what they will see</div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Frustration Events (live demo) ─── */}
+      {DEMO_FRUSTRATION_EVENTS.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <div>
+              <div className="page-title" style={{ fontSize: 16 }}>Live Frustration Alerts</div>
+              <div className="page-sub">AI-detected frustration events and automatic interventions</div>
+            </div>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
+            {DEMO_FRUSTRATION_EVENTS.map(evt => (
+              <div key={evt.id} className="card" style={{
+                borderLeft: `4px solid ${evt.severity === 'high' ? 'var(--coral)' : 'var(--amber)'}`,
+                padding: '12px 16px',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14 }}>{evt.studentName}</span>
+                      <Badge variant={evt.severity === 'high' ? 'coral' : 'amber'}>
+                        {evt.severity === 'high' ? 'High Frustration' : 'Moderate'}
+                      </Badge>
+                      <Badge variant="blue">{evt.triggerType.replace('_', ' ')}</Badge>
+                    </div>
+                    <div style={{ fontSize: 13, marginBottom: 4 }}>
+                      <strong>Trigger:</strong> {evt.trigger}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      {evt.question}
+                    </div>
+                    <div style={{ fontSize: 12 }}>
+                      <span style={{ color: 'var(--coral)' }}>{evt.beforeState}</span>
+                      {' → '}
+                      <span style={{ color: 'var(--teal)' }}>{evt.afterState}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{
+                      fontSize: 24, fontWeight: 700,
+                      color: evt.frustrationScore >= 70 ? 'var(--coral)' : 'var(--amber)',
+                    }}>
+                      {evt.frustrationScore}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>frustration score</div>
+                    <Badge variant={evt.status === 'auto-reframed' ? 'teal' : 'amber'} style={{ marginTop: 4 }}>
+                      {evt.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Approved History ─── */}
+      {DEMO_APPROVED_HISTORY.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="page-header" style={{ marginBottom: 0 }}>
+            <div>
+              <div className="page-title" style={{ fontSize: 16 }}>Approved Assignment History</div>
+              <div className="page-sub">Past approved assignments with student performance data</div>
+            </div>
+          </div>
+          <div className="stack" style={{ gap: 8 }}>
+            {DEMO_APPROVED_HISTORY.map(hist => (
+              <div key={hist.id} className="card" style={{ padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: 14 }}>{hist.assignmentTitle}</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4, alignItems: 'center' }}>
+                      <Badge variant="blue">{hist.subject}</Badge>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                        Approved {new Date(hist.approvedAt).toLocaleDateString()}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                        · {hist.studentCount} students
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {hist.avgScore !== null && (
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 600, color: hist.avgScore >= 70 ? 'var(--teal)' : 'var(--coral)' }}>
+                          {hist.avgScore}%
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>avg score</div>
+                      </div>
+                    )}
+                    {hist.frustrationEvents > 0 && (
+                      <Badge variant={hist.frustrationEvents >= 3 ? 'coral' : 'amber'}>
+                        {hist.frustrationEvents} frustration events
+                      </Badge>
+                    )}
+                    <Badge variant={hist.status === 'active' ? 'teal' : 'gray'}>{hist.status}</Badge>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const { parseFile } = require('./parseFile');
 const { adaptLesson, generateReframe, tutorChat, resolveAiRuntime } = require('./gemma');
+const { searchCloudinaryByTag, listCloudinaryTags } = require('./media');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -150,6 +151,25 @@ app.post('/api/tutor-chat', async (req, res) => {
   } catch (err) {
     console.error('tutor-chat error:', err);
     return res.status(500).json({ error: 'Failed to generate tutor response.' });
+  }
+});
+
+// ─── Cloudinary image API ───────────────────────────────────────────────
+app.get('/api/cloudinary/tags', async (_req, res) => {
+  try {
+    const tags = await listCloudinaryTags();
+    res.json({ tags });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to list Cloudinary tags' });
+  }
+});
+
+app.get('/api/cloudinary/images/:tag', async (req, res) => {
+  try {
+    const images = await searchCloudinaryByTag(req.params.tag);
+    res.json({ images, tag: req.params.tag });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search Cloudinary images' });
   }
 });
 

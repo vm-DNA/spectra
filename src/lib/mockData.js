@@ -417,6 +417,68 @@ export const REPORT_SUBJECT_META = {
 // Rich report data for the tabbed reports page
 export const REPORT_ASSIGNMENTS = [
   {
+    id: 'fractions-adding',
+    subject: 'Mathematics',
+    title: 'Adding Fractions (Q1–Q5)',
+    date: 'Apr 26',
+    dot: 'coral',
+    studentCount: 5,
+    questionCount: 5,
+    totalReframes: 3,
+    overview: {
+      avgScore: { value: 58, sub: 'across 5 students' },
+      completion: { value: '60%', sub: '3 of 5 finished' },
+      aiReframes: { value: 3, sub: '2 students triggered' },
+      avgEngagement: { value: '68%', sub: 'first attempt at topic' },
+      scoreByStyle: [
+        { style: 'Visual', pct: 72, color: 'var(--amber)' },
+        { style: 'Auditory', pct: 55, color: 'var(--coral)' },
+        { style: 'Reading', pct: 80, color: 'var(--teal)' },
+        { style: 'Kinesthetic', pct: 35, color: 'var(--coral)' },
+      ],
+      styleInsight: 'Kinesthetic learner Eli R. struggled most — interactive lesson was too complex initially. Auto-reframe simplified to step-by-step guided blocks. Reading learner Sofia performed best with structured text explanation.',
+      reframesByStrategy: [
+        { strategy: 'Simplify', count: 1, color: 'var(--coral)' },
+        { strategy: 'Step split', count: 1, color: 'var(--amber)' },
+        { strategy: 'Mode switch', count: 1, color: 'var(--teal)' },
+      ],
+      strategyInsight: 'Different denominators is a new concept. All reframes occurred on Q3 (1/2 + 2/3) — students struggled with finding LCD.',
+      heatmap: [
+        { label: 'Q1', pct: 80, reframes: 0 },
+        { label: 'Q2', pct: 60, reframes: 1 },
+        { label: 'Q3', pct: 30, reframes: 2, flagged: true },
+        { label: 'Q4', pct: 55, reframes: 0 },
+        { label: 'Q5', pct: 48, reframes: 0 },
+      ],
+    },
+    students: [
+      { studentId: 'jamie', mode: 'Visual', score: 75, engagement: 78, reframes: 0, pattern: 'None' },
+      { studentId: 'maya', mode: 'Auditory', score: 55, engagement: 62, reframes: 1, pattern: 'Rapid clicking on Q2 — narration pace too fast' },
+      { studentId: 'eli', mode: 'Kinesthetic', score: 35, engagement: 45, reframes: 2, pattern: 'High frustration: 3 wrong on Q3, typed "this is too hard"' },
+      { studentId: 'sofia', mode: 'Reading', score: 80, engagement: 85, reframes: 0, pattern: 'None' },
+      { studentId: 'aisha', mode: 'Visual', score: 68, engagement: 72, reframes: 0, pattern: 'None' },
+    ],
+    reframeLog: [
+      { studentId: 'eli', question: 'Q3', description: '3 consecutive wrong answers → simplified to 2-step problem with visual block hints, Minecraft encouragement message', severity: 'High' },
+      { studentId: 'eli', question: 'Q4', description: 'Typed "this is too hard" → break prompt shown, teacher notified, switched to guided walkthrough mode', severity: 'High' },
+      { studentId: 'maya', question: 'Q2', description: 'Rapid clicks detected (5 in 4s) → narration replayed at 0.8x speed with extra step breakdown', severity: 'Moderate' },
+    ],
+    questions: [
+      { label: 'Q1', text: '4/5 + 1/3 = ?', successPct: 80, reframes: 0, description: 'Moderate difficulty — most students found common denominator of 15 with hints.', flagged: false },
+      { label: 'Q2', text: '2/7 + 3/4 = ?', successPct: 60, reframes: 1, description: 'Maya needed audio re-read. Finding LCD of 28 was challenging for auditory learners.', flagged: false },
+      { label: 'Q3', text: '1/2 + 2/3 = ?', successPct: 30, reframes: 2, description: 'Eli hit high frustration — 3 wrong attempts, then typed distress keyword. Despite appearing simple, students confused 1/2+2/3 with 3/5. Needs pre-teaching of LCD concept.', flagged: true },
+      { label: 'Q4', text: '3/8 + 1/4 = ?', successPct: 55, reframes: 0, description: '1/4 = 2/8 conversion was easier since 4 divides 8. Lower score but no frustration.', flagged: false },
+      { label: 'Q5', text: '5/6 + 1/2 = ?', successPct: 48, reframes: 0, description: 'Improper fraction result (8/6) confused some students. Consider teaching mixed numbers first.', flagged: false },
+    ],
+    insights: [
+      { type: 'warning', text: '**Q3 caused high frustration for Eli R.** He attempted 3 wrong answers then typed "this is too hard." The AI auto-reframed to a step-by-step guided mode and notified the teacher. Consider adding a pre-teaching section on finding Least Common Denominators before the next fraction assignment.' },
+      { type: 'amber', text: '**Kinesthetic mode scored 35% — lowest across all styles.** The interactive Minecraft blocks were initially too complex for this topic. The auto-regenerated version with simpler step-by-step blocks performed better. For future fraction lessons, start kinesthetic learners with guided mode.' },
+      { type: 'amber', text: '**Maya K. rapid-clicked through Q2** indicating the auditory narration pace was too fast. ElevenLabs narration was regenerated at 0.8x speed. Consider default slower pacing for math narration.' },
+      { type: 'positive', text: '**Sofia B. scored 80% with zero reframes** — Reading mode with Encanto theming continues to be highly effective. She completed all 5 problems in 12 minutes.' },
+      { type: 'positive', text: '**The frustration detection system worked as designed.** All 3 events were detected within 10 seconds and auto-reframed without teacher intervention needed. Eli completed Q3 after the reframe.' },
+    ],
+  },
+  {
     id: 'addition',
     subject: 'Mathematics',
     title: 'Addition (Q1–Q5)',

@@ -2,7 +2,7 @@ const AI_PROVIDER = (process.env.AI_PROVIDER || 'auto').toLowerCase();
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || '';
 const GOOGLE_MODEL = process.env.GOOGLE_MODEL || process.env.GEMINI_MODEL || 'gemma-3-12b-it';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const { generateAndUploadLessonImageSet, generateAndUploadLessonAudio } = require('./media');
+const { generateAndUploadLessonImageSet, generateAndUploadLessonAudio, generateVisualLessonWithCloudinary } = require('./media');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Anthropic = ANTHROPIC_API_KEY ? require('@anthropic-ai/sdk') : null;
 
@@ -263,19 +263,27 @@ async function attachMedia(adaptation, student, subject) {
 
   // Only generate images for Visual learners
   if (needsImages) {
+    const character = (student?.characters || [])[0] || '';
     try {
-      const imageSet = await generateAndUploadLessonImageSet({
+      // Try to find character images on Cloudinary first
+      const visualResult = await generateVisualLessonWithCloudinary({
         prompt: adaptation.cloudinaryPrompt,
         studentId: student?.id,
         studentName: student?.name,
         subject,
+        character,
       });
-      if (imageSet?.urls) {
-        withMedia.imageUrl = imageSet.urls.neutral;
-        withMedia.imageUrls = imageSet.urls;
+      if (visualResult?.characterImages) {
+        withMedia.characterImages = visualResult.characterImages;
+        withMedia.imageUrl = visualResult.urls.neutral;
+        withMedia.imageUrls = visualResult.urls;
+        logAiDebug('cloudinary_character_images_found', { studentId: student?.id || null, character, count: visualResult.characterImages.length });
+      } else if (visualResult?.urls) {
+        withMedia.imageUrl = visualResult.urls.neutral;
+        withMedia.imageUrls = visualResult.urls;
         logAiDebug('cloudinary_image_success', { studentId: student?.id || null, subject });
-      } else if (imageSet?.reason) {
-        withMedia.imageStatus = imageSet.reason;
+      } else if (visualResult?.reason) {
+        withMedia.imageStatus = visualResult.reason;
       }
     } catch (err) {
       withMedia.imageStatus = `image_generation_failed: ${err.message}`;
@@ -318,7 +326,13 @@ function getModalityInstructions(primaryStyle, student) {
 - The cloudinaryPrompt should describe a detailed, colorful scene of ${character} demonstrating the math concepts from the worksheet
 - Keep adaptedText SHORT — visual learners need minimal text
 - Generate questions with clear, visual-friendly answer options
-- The interactiveHtml can be minimal for this learner`;
+- IMPORTANT: Generate interactiveHtml that creates a visually rich HTML/CSS lesson layout with:
+  * A large header area where a character image (provided via Cloudinary URL) will be displayed
+  * Visual fraction diagrams using SVG or CSS (pie charts, bar models, etc.)
+  * Colorful, ${character}-themed styling (colors, borders, backgrounds)
+  * The HTML should have an <img> tag with id="character-image" and src="CHARACTER_IMAGE_PLACEHOLDER" that will be replaced with the actual Cloudinary URL
+  * The layout should look like a visual learning worksheet with the character guiding the lesson
+  * Include CSS animations for engaging visual presentation`;
     case 'Auditory':
       return `AUDITORY LEARNER INSTRUCTIONS:
 - Focus on generating a FULL, detailed elevenLabsScript for text-to-speech
@@ -528,7 +542,17 @@ Rules:
         }
       }
 
-      results[student.id] = await attachMedia(normalized, student, subject);
+      const withMedia = await attachMedia(normalized, student, subject);
+
+      // For Visual learners: replace CHARACTER_IMAGE_PLACEHOLDER with actual Cloudinary URLs
+      if (primaryStyle === 'Visual' && withMedia.characterImages && withMedia.interactiveHtml) {
+        withMedia.interactiveHtml = withMedia.interactiveHtml.replace(
+          /CHARACTER_IMAGE_PLACEHOLDER/g,
+          withMedia.characterImages[0]
+        );
+      }
+
+      results[student.id] = withMedia;
     } catch (err) {
       try {
         const repairPrompt = `${prompt}
@@ -545,7 +569,14 @@ Return ONLY strict JSON and ensure all required fields exist with correct types.
           }
         }
 
-        results[student.id] = await attachMedia(normalized, student, subject);
+        const withMedia = await attachMedia(normalized, student, subject);
+        if (primaryStyle === 'Visual' && withMedia.characterImages && withMedia.interactiveHtml) {
+          withMedia.interactiveHtml = withMedia.interactiveHtml.replace(
+            /CHARACTER_IMAGE_PLACEHOLDER/g,
+            withMedia.characterImages[0]
+          );
+        }
+        results[student.id] = withMedia;
       } catch (retryErr) {
         console.error(`Failed to adapt for student ${student.id}:`, retryErr.message);
         results[student.id] = await attachMedia(fallbackAdaptation(student, subject, retryErr.message), student, subject);

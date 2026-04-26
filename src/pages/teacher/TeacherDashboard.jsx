@@ -5,6 +5,7 @@ import { StatCard, Alert, Avatar, StatusDot, Badge, ProgressBar } from '../../co
 import { useAuth } from '../../lib/AuthContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { DEMO_FRUSTRATION_EVENTS } from '../../lib/demoData';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -155,6 +156,40 @@ export default function TeacherDashboard() {
           ))}
         </div>
       </div>
+
+      {/* Frustration Flags — recent AI interventions */}
+      {DEMO_FRUSTRATION_EVENTS.length > 0 && (
+        <div>
+          <div className="card-title" style={{ marginBottom: 10 }}>Frustration Flags</div>
+          <div className="stack" style={{ gap: 6 }}>
+            {DEMO_FRUSTRATION_EVENTS.map(evt => (
+              <div key={evt.id} className="card" style={{
+                padding: '10px 14px',
+                borderLeft: `3px solid ${evt.severity === 'high' ? 'var(--coral)' : 'var(--amber)'}`,
+                cursor: 'pointer',
+              }}
+                onClick={() => navigate('/teacher/reports')}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>{evt.severity === 'high' ? '🔴' : '🟡'}</span>
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: 13 }}>{evt.studentName}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{evt.trigger}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Badge variant={evt.status === 'auto-reframed' ? 'teal' : 'amber'}>{evt.status}</Badge>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Current Assignments & Past Assignments bubbles */}
       <div className="grid-2" style={{ gap: 16 }}>

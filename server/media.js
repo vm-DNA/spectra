@@ -193,7 +193,69 @@ async function generateAndUploadLessonAudio({ script, studentId, subject }) {
   }
 }
 
+/**
+ * Search Cloudinary for character images by tag.
+ * Users should upload images tagged with character names (e.g., 'spongebob', 'bluey').
+ */
+async function searchCloudinaryByTag(tag) {
+  if (!isCloudinaryConfigured) return [];
+  try {
+    const result = await cloudinary.api.resources_by_tag(tag.toLowerCase(), {
+      max_results: 20,
+      resource_type: 'image',
+    });
+    return (result.resources || []).map(r => ({
+      url: r.secure_url,
+      publicId: r.public_id,
+      width: r.width,
+      height: r.height,
+      format: r.format,
+    }));
+  } catch (e) {
+    console.error('Cloudinary tag search failed:', e.message);
+    return [];
+  }
+}
+
+/**
+ * List all tags in the Cloudinary account (for browsing available characters).
+ */
+async function listCloudinaryTags() {
+  if (!isCloudinaryConfigured) return [];
+  try {
+    const result = await cloudinary.api.tags({ max_results: 100 });
+    return result.tags || [];
+  } catch (e) {
+    console.error('Cloudinary tags list failed:', e.message);
+    return [];
+  }
+}
+
+/**
+ * Generate visual lesson HTML that overlays character images from Cloudinary.
+ * Falls back to SVG text card if no character images are found.
+ */
+async function generateVisualLessonWithCloudinary({ prompt, studentId, studentName, subject, character }) {
+  const tag = (character || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const images = tag ? await searchCloudinaryByTag(tag) : [];
+
+  if (images.length === 0) {
+    // Fallback to SVG text card upload
+    return generateAndUploadLessonImageSet({ prompt, studentId, studentName, subject });
+  }
+
+  // Return the character images for Gemma to compose into HTML
+  return {
+    characterImages: images.map(i => i.url),
+    characterTag: tag,
+    urls: { neutral: images[0].url, happy: images[1]?.url || images[0].url, supportive: images[2]?.url || images[0].url },
+  };
+}
+
 module.exports = {
   generateAndUploadLessonImageSet,
   generateAndUploadLessonAudio,
+  searchCloudinaryByTag,
+  listCloudinaryTags,
+  generateVisualLessonWithCloudinary,
 };
