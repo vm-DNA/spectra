@@ -25,6 +25,8 @@ export default function DemoStudentView() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [reframeData, setReframeData] = useState(null); // active reframe overlay
+  const [readingAnswers, setReadingAnswers] = useState({}); // track reading quiz answers { qIndex: 'correct'|'wrong' }
+  const [readingWrongCounts, setReadingWrongCounts] = useState({}); // track wrong attempts per question
   const chatEndRef = useRef(null);
   const clickTimestamps = useRef([]);
   const recognitionRef = useRef(null);
@@ -51,6 +53,8 @@ export default function DemoStudentView() {
       setFrustrationEvents([]);
       setReframeTriggered(false);
       setReframeData(null);
+      setReadingAnswers({});
+      setReadingWrongCounts({});
       clickTimestamps.current = [];
     }
   }, [selectedStudent, lesson, character]);
@@ -445,19 +449,126 @@ export default function DemoStudentView() {
               }}
             />
           ) : mode === 'Reading' ? (
-            <div style={{
-              background: 'white', borderRadius: 12, padding: 24,
-              fontSize: 15, lineHeight: 1.8, maxWidth: 700,
-            }}>
-              {(lesson?.adaptedText || '').split('\n').map((line, i) => {
-                if (line.startsWith('**') && line.endsWith('**')) {
-                  return <h3 key={i} style={{ marginTop: 16, marginBottom: 4, color: '#92400E' }}>{line.replace(/\*\*/g, '')}</h3>;
-                }
-                if (line.startsWith('**')) {
-                  return <p key={i} style={{ marginBottom: 4 }}><strong>{line.replace(/\*\*/g, '')}</strong></p>;
-                }
-                return <p key={i} style={{ marginBottom: line === '' ? 12 : 4 }}>{line}</p>;
-              })}
+            <div style={{ maxWidth: 700 }}>
+              <div style={{
+                background: 'white', borderRadius: 12, padding: 24,
+                fontSize: 15, lineHeight: 1.8, marginBottom: 16,
+              }}>
+                {(lesson?.adaptedText || '').split('\n').map((line, i) => {
+                  if (line.startsWith('**') && line.endsWith('**')) {
+                    return <h3 key={i} style={{ marginTop: 16, marginBottom: 4, color: '#92400E' }}>{line.replace(/\*\*/g, '')}</h3>;
+                  }
+                  if (line.startsWith('**')) {
+                    return <p key={i} style={{ marginBottom: 4 }}><strong>{line.replace(/\*\*/g, '')}</strong></p>;
+                  }
+                  return <p key={i} style={{ marginBottom: line === '' ? 12 : 4 }}>{line}</p>;
+                })}
+              </div>
+
+              {/* Reading quiz questions */}
+              {lesson?.questions && lesson.questions.length > 0 && (
+                <div style={{
+                  background: 'white', borderRadius: 12, padding: 24,
+                }}>
+                  <h3 style={{ color: '#92400E', marginBottom: 16, fontSize: 18 }}>
+                    Practice Problems
+                  </h3>
+                  {lesson.questions.map((q, qi) => {
+                    const answered = readingAnswers[qi];
+                    const wrongCount = readingWrongCounts[qi] || 0;
+                    return (
+                      <div key={q.id || qi} style={{
+                        background: answered === 'correct' ? '#F0FFF4' : answered === 'wrong' ? '#FFF5F5' : '#FFFBEB',
+                        borderRadius: 12, padding: 16, marginBottom: 12,
+                        border: `2px solid ${answered === 'correct' ? '#A7F3D0' : answered === 'wrong' ? '#FECACA' : '#FDE68A'}`,
+                        transition: 'all 0.3s',
+                      }}>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: '#1F2937', marginBottom: 10 }}>
+                          Q{qi + 1}: {q.text}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {q.options.map((opt, oi) => {
+                            const isCorrect = oi === q.correctIndex;
+                            const showCorrect = answered === 'correct' && isCorrect;
+                            const showRevealed = wrongCount >= 3 && isCorrect;
+                            return (
+                              <button
+                                key={oi}
+                                disabled={answered === 'correct' || wrongCount >= 3}
+                                onClick={() => {
+                                  if (isCorrect) {
+                                    setReadingAnswers(prev => ({ ...prev, [qi]: 'correct' }));
+                                  } else {
+                                    const newWrong = wrongCount + 1;
+                                    setReadingWrongCounts(prev => ({ ...prev, [qi]: newWrong }));
+                                    setReadingAnswers(prev => ({ ...prev, [qi]: 'wrong' }));
+                                    // Reset wrong indicator after a moment
+                                    setTimeout(() => setReadingAnswers(prev => {
+                                      if (prev[qi] === 'wrong') { const n = { ...prev }; delete n[qi]; return n; }
+                                      return prev;
+                                    }), 1200);
+                                    // Frustration tracking
+                                    const newScore = Math.min(frustrationScore + 10, 100);
+                                    setFrustrationScore(newScore);
+                                    if (newWrong >= 2) {
+                                      setFrustrationEvents(prev => [...prev, {
+                                        id: `frust-reading-${Date.now()}`,
+                                        studentName: student?.name,
+                                        trigger: `${newWrong} wrong answers on "${q.text}"`,
+                                        triggerType: 'wrong_attempts',
+                                        frustrationScore: newScore,
+                                        severity: newWrong >= 3 ? 'high' : 'moderate',
+                                        timestamp: new Date().toISOString(),
+                                        status: newWrong >= 3 ? 'auto-reframed' : 'monitoring',
+                                      }]);
+                                    }
+                                  }
+                                }}
+                                style={{
+                                  padding: '10px 20px', borderRadius: 10, fontSize: 14,
+                                  fontWeight: 600, cursor: (answered === 'correct' || wrongCount >= 3) ? 'default' : 'pointer',
+                                  transition: 'all 0.2s',
+                                  border: `2px solid ${showCorrect || showRevealed ? '#10B981' : '#D1D5DB'}`,
+                                  background: showCorrect || showRevealed ? '#D1FAE5' : 'white',
+                                  color: showCorrect || showRevealed ? '#065F46' : '#374151',
+                                  opacity: (answered === 'correct' || wrongCount >= 3) && !isCorrect ? 0.5 : 1,
+                                }}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {answered === 'correct' && (
+                          <div style={{ marginTop: 8, fontSize: 13, color: '#065F46', fontWeight: 500 }}>
+                            Correct! {q.hint}
+                          </div>
+                        )}
+                        {wrongCount >= 3 && answered !== 'correct' && (
+                          <div style={{ marginTop: 8, fontSize: 13, color: '#991B1B', fontWeight: 500 }}>
+                            The answer is highlighted. {q.hint}
+                          </div>
+                        )}
+                        {answered === 'wrong' && wrongCount < 3 && (
+                          <div style={{ marginTop: 8, fontSize: 13, color: '#B45309', fontWeight: 500 }}>
+                            Not quite — try again! ({3 - wrongCount} attempts left)
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {/* Score summary */}
+                  {Object.keys(readingAnswers).filter(k => readingAnswers[k] === 'correct').length > 0 && (
+                    <div style={{
+                      textAlign: 'center', padding: 12, marginTop: 8,
+                      background: '#FFFBEB', borderRadius: 10, fontSize: 14,
+                      color: '#92400E', fontWeight: 600,
+                    }}>
+                      Score: {Object.keys(readingAnswers).filter(k => readingAnswers[k] === 'correct').length} / {lesson.questions.length} correct
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div style={{

@@ -222,39 +222,70 @@ const MAYA_AUDITORY_HTML = `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;padding:20px}
 .container{max-width:480px;width:100%;margin:0 auto}
-.header{text-align:center;margin-bottom:32px}
+.header{text-align:center;margin-bottom:24px}
 .header h1{color:#1565C0;font-size:22px;font-weight:600;margin-bottom:6px}
 .header p{color:#78909C;font-size:13px}
-.player{background:white;border-radius:24px;padding:40px 32px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,0.06)}
-.play-btn{width:80px;height:80px;border-radius:50%;background:#1565C0;border:none;color:white;font-size:28px;cursor:pointer;transition:all 0.2s;margin:0 auto 20px;display:block}
+.player{background:white;border-radius:24px;padding:32px 28px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,0.06);margin-bottom:24px}
+.play-btn{width:72px;height:72px;border-radius:50%;background:#1565C0;border:none;color:white;font-size:26px;cursor:pointer;transition:all 0.2s;margin:0 auto 16px;display:block}
 .play-btn:hover{background:#0D47A1;transform:scale(1.05)}
 .play-btn.playing{background:#2E7D32;animation:pulse-play 1.5s infinite}
 .play-btn:disabled{opacity:0.7;cursor:wait}
 @keyframes pulse-play{0%,100%{box-shadow:0 0 0 0 rgba(46,125,50,0.3)}50%{box-shadow:0 0 0 18px rgba(46,125,50,0)}}
-.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:48px;margin:16px 0}
+.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:12px 0}
 .wave-bar{width:4px;background:#90CAF9;border-radius:2px;transition:height 0.15s}
-.status{font-size:14px;color:#546E7F;margin-bottom:16px;font-weight:500}
-.speed-controls{display:flex;gap:8px;justify-content:center;margin-top:20px}
-.speed-btn{padding:6px 16px;border-radius:16px;border:1.5px solid #B0BEC5;background:white;color:#546E7F;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.15s}
+.status{font-size:13px;color:#546E7F;margin-bottom:12px;font-weight:500}
+.speed-controls{display:flex;gap:8px;justify-content:center;margin-top:16px}
+.speed-btn{padding:5px 14px;border-radius:14px;border:1.5px solid #B0BEC5;background:white;color:#546E7F;cursor:pointer;font-size:12px;font-weight:500;transition:all 0.15s}
 .speed-btn:hover{border-color:#1565C0;color:#1565C0}
 .speed-btn.active{background:#1565C0;color:white;border-color:#1565C0}
-.topic{margin-top:24px;padding:16px 20px;background:#F5F7FA;border-radius:14px;text-align:left}
-.topic-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#90A4AE;font-weight:600;margin-bottom:6px}
-.topic-text{font-size:14px;color:#37474F;line-height:1.5}
-.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#E8F5E9;color:#2E7D32;margin-top:16px}
+.topic{margin-top:16px;padding:12px 16px;background:#F5F7FA;border-radius:12px;text-align:left}
+.topic-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#90A4AE;font-weight:600;margin-bottom:4px}
+.topic-text{font-size:13px;color:#37474F;line-height:1.5}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;background:#E8F5E9;color:#2E7D32;margin-top:12px}
+.quiz-section{background:white;border-radius:24px;padding:28px;box-shadow:0 2px 16px rgba(0,0,0,0.06)}
+.quiz-header{text-align:center;margin-bottom:20px}
+.quiz-header h2{color:#1565C0;font-size:18px;font-weight:600;margin-bottom:4px}
+.quiz-header p{color:#78909C;font-size:12px}
+.quiz-progress{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.q-dot{width:28px;height:28px;border-radius:50%;border:2px solid #B0BEC5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#78909C;transition:all 0.3s}
+.q-dot.active{border-color:#1565C0;color:#1565C0;background:#E3F2FD}
+.q-dot.correct{border-color:#2E7D32;color:white;background:#2E7D32}
+.q-dot.wrong{border-color:#C62828;color:white;background:#C62828}
+.question-card{background:#F5F7FA;border-radius:16px;padding:24px;text-align:center;margin-bottom:20px}
+.question-text{font-size:18px;font-weight:600;color:#1A237E;margin-bottom:8px}
+.question-hint{font-size:12px;color:#78909C}
+.mic-area{text-align:center;margin:20px 0}
+.mic-btn{width:72px;height:72px;border-radius:50%;border:none;font-size:28px;cursor:pointer;transition:all 0.2s;margin:0 auto;display:block}
+.mic-btn.ready{background:#1565C0;color:white;box-shadow:0 4px 12px rgba(21,101,194,0.3)}
+.mic-btn.ready:hover{background:#0D47A1;transform:scale(1.05)}
+.mic-btn.listening{background:#C62828;color:white;animation:pulse-mic 1s infinite}
+.mic-btn.disabled{background:#B0BEC5;color:white;cursor:not-allowed}
+@keyframes pulse-mic{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,0.3)}50%{box-shadow:0 0 0 16px rgba(198,40,40,0)}}
+.mic-label{font-size:12px;color:#78909C;margin-top:8px;font-weight:500}
+.transcript-bubble{background:#E3F2FD;border-radius:12px;padding:12px 16px;margin:12px auto;max-width:300px;font-size:14px;color:#1A237E;font-weight:500}
+.feedback{border-radius:14px;padding:16px 20px;margin:16px 0;text-align:center;font-size:14px;font-weight:600;animation:fadeIn 0.3s}
+.feedback.correct{background:#E8F5E9;color:#2E7D32;border:2px solid #A5D6A7}
+.feedback.wrong{background:#FFF3E0;color:#E65100;border:2px solid #FFE0B2}
+.feedback.speaking{background:#E3F2FD;color:#1565C0;border:2px solid #90CAF9}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.score-display{text-align:center;padding:20px;margin-top:12px}
+.score-display .score{font-size:36px;font-weight:700;color:#1565C0}
+.score-display .score-label{font-size:13px;color:#78909C;margin-top:4px}
+.next-btn{display:block;margin:16px auto 0;padding:10px 28px;border-radius:20px;border:none;background:#1565C0;color:white;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.next-btn:hover{background:#0D47A1;transform:scale(1.03)}
 </style></head><body>
 <div class="container">
 <div class="header">
 <h1>Adding Fractions</h1>
-<p>Listen to Ryder explain the lesson</p>
+<p>Listen to Ryder explain the lesson, then answer with your voice!</p>
 </div>
 
 <div class="player">
 <button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
 <div class="waveform" id="waveform"></div>
-<div class="status" id="statusText">Tap to play</div>
+<div class="status" id="statusText">Tap to play the lesson</div>
 <div class="speed-controls">
 <button class="speed-btn" onclick="setSpeed(0.8)">0.8x</button>
 <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
@@ -265,6 +296,28 @@ body{font-family:'Segoe UI',sans-serif;background:#f0f4f8;min-height:100vh;displ
 <div class="topic-text">Adding fractions with different denominators — finding common denominators, converting, and adding numerators.</div>
 </div>
 <div class="badge">ElevenLabs Voice: Ryder</div>
+</div>
+
+<div class="quiz-section" id="quizSection">
+<div class="quiz-header">
+<h2>Voice Quiz Time!</h2>
+<p>Ryder will ask you a question — answer by speaking!</p>
+</div>
+<div class="quiz-progress" id="quizProgress"></div>
+<div class="question-card" id="questionCard">
+<div class="question-text" id="questionText">Loading question...</div>
+<div class="question-hint" id="questionHint"></div>
+</div>
+<div id="feedbackArea"></div>
+<div class="mic-area">
+<button class="mic-btn ready" id="micBtn" onclick="handleMic()">🎤</button>
+<div class="mic-label" id="micLabel">Tap to answer with your voice</div>
+</div>
+<div id="transcriptArea"></div>
+<div class="score-display" id="scoreDisplay" style="display:none">
+<div class="score" id="scoreValue">0/5</div>
+<div class="score-label">Questions Answered</div>
+</div>
 </div>
 </div>
 
@@ -279,18 +332,18 @@ const narrationScript="Hey Maya! It's Ryder from Paw Patrol here! Today we're go
 async function togglePlay(){
 const btn=document.getElementById('playBtn');
 const status=document.getElementById('statusText');
-if(playing&&audioEl){audioEl.pause();playing=false;btn.textContent='▶';btn.classList.remove('playing');status.textContent='Paused';clearInterval(waveInterval);bars.forEach(b=>b.style.height='6px');return;}
+if(playing&&audioEl){audioEl.pause();playing=false;btn.textContent='\\u25b6';btn.classList.remove('playing');status.textContent='Paused';clearInterval(waveInterval);bars.forEach(b=>b.style.height='6px');return;}
 if(!audioLoaded){
 btn.textContent='...';btn.disabled=true;status.textContent='Loading audio...';
 try{
 const res=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:narrationScript})});
 if(res.ok){const blob=await res.blob();audioEl=new Audio(URL.createObjectURL(blob));audioLoaded=true;
-audioEl.onended=()=>{playing=false;btn.textContent='▶';btn.classList.remove('playing');status.textContent='Finished — tap to replay';clearInterval(waveInterval);bars.forEach(b=>b.style.height='6px');};
+audioEl.onended=()=>{playing=false;btn.textContent='\\u25b6';btn.classList.remove('playing');status.textContent='Finished! Now try the voice quiz below \\u2b07\\ufe0f';clearInterval(waveInterval);bars.forEach(b=>b.style.height='6px');};
 }else{throw new Error('TTS failed');}
-}catch(e){console.error(e);btn.textContent='▶';btn.disabled=false;status.textContent='Could not load audio';return;}
+}catch(e){console.error(e);btn.textContent='\\u25b6';btn.disabled=false;status.textContent='Could not load audio';return;}
 btn.disabled=false;
 }
-audioEl.play();playing=true;btn.textContent='⏸';btn.classList.add('playing');status.textContent='Playing...';animateWave();
+audioEl.play();playing=true;btn.textContent='\\u23f8';btn.classList.add('playing');status.textContent='Playing...';animateWave();
 }
 function animateWave(){
 waveInterval=setInterval(()=>{bars.forEach(b=>{b.style.height=(4+Math.random()*36)+'px';b.style.background=playing?'#1565C0':'#90CAF9';});},120);
@@ -299,6 +352,115 @@ function setSpeed(s){
 document.querySelectorAll('.speed-btn').forEach(b=>{b.classList.remove('active');if(b.textContent===s+'x')b.classList.add('active');});
 if(audioEl)audioEl.playbackRate=s;
 }
+
+// ─── VOICE QUIZ ───
+const questions=[
+{text:'What is 4/5 + 1/3?',spoken:'Maya, what is four fifths plus one third?',answer:'17/15',spokenAnswer:'seventeen fifteenths',acceptAlt:['17 over 15','17/15','1 and 2/15','one and two fifteenths','seventeen over fifteen','seventeen fifteenths'],hint:'Find common denominator: 15'},
+{text:'What is 2/7 + 3/4?',spoken:'What is two sevenths plus three fourths?',answer:'29/28',spokenAnswer:'twenty-nine twenty-eighths',acceptAlt:['29 over 28','29/28','1 and 1/28','one and one twenty-eighth','twenty nine over twenty eight','twenty nine twenty eighths'],hint:'Common denominator is 28'},
+{text:'What is 1/2 + 2/3?',spoken:'What is one half plus two thirds?',answer:'7/6',spokenAnswer:'seven sixths',acceptAlt:['7 over 6','7/6','1 and 1/6','one and one sixth','seven over six','seven sixths'],hint:'Common denominator is 6'},
+{text:'What is 3/8 + 1/4?',spoken:'What is three eighths plus one fourth?',answer:'5/8',spokenAnswer:'five eighths',acceptAlt:['5 over 8','5/8','five over eight','five eighths'],hint:'1/4 = 2/8, so 3+2=5'},
+{text:'What is 5/6 + 1/2?',spoken:'Last one! What is five sixths plus one half?',answer:'8/6',spokenAnswer:'eight sixths, or four thirds',acceptAlt:['8 over 6','8/6','4/3','four thirds','1 and 1/3','one and one third','eight over six','eight sixths','four over three'],hint:'1/2 = 3/6, so 5+3=8'},
+];
+let currentQ=0,score=0,wrongCounts=[0,0,0,0,0],listening=false,recognition=null;
+
+function initQuiz(){
+const prog=document.getElementById('quizProgress');
+prog.innerHTML='';
+questions.forEach((_,i)=>{const d=document.createElement('div');d.className='q-dot'+(i===0?' active':'');d.textContent=i+1;d.id='qdot'+i;prog.appendChild(d);});
+showQuestion();
+}
+
+function showQuestion(){
+if(currentQ>=questions.length){showFinalScore();return;}
+const q=questions[currentQ];
+document.getElementById('questionText').textContent=q.text;
+document.getElementById('questionHint').textContent='Hint: '+q.hint;
+document.getElementById('feedbackArea').innerHTML='';
+document.getElementById('transcriptArea').innerHTML='';
+document.getElementById('micBtn').className='mic-btn ready';
+document.getElementById('micLabel').textContent='Tap to answer with your voice';
+document.getElementById('scoreDisplay').style.display='block';
+document.getElementById('scoreValue').textContent=score+'/'+questions.length;
+speakQuestion(q.spoken);
+}
+
+async function speakQuestion(text){
+const fb=document.getElementById('feedbackArea');
+fb.innerHTML='<div class="feedback speaking">\\ud83d\\udd0a Ryder is reading the question...</div>';
+document.getElementById('micBtn').className='mic-btn disabled';
+try{
+const res=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text})});
+if(res.ok){const blob=await res.blob();const a=new Audio(URL.createObjectURL(blob));
+a.onended=()=>{fb.innerHTML='';document.getElementById('micBtn').className='mic-btn ready';document.getElementById('micLabel').textContent='Now tap to answer!';};
+a.play();}else{fb.innerHTML='';document.getElementById('micBtn').className='mic-btn ready';}
+}catch(e){fb.innerHTML='';document.getElementById('micBtn').className='mic-btn ready';}
+}
+
+function handleMic(){
+const btn=document.getElementById('micBtn');
+if(btn.classList.contains('disabled'))return;
+if(listening&&recognition){recognition.stop();return;}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){document.getElementById('transcriptArea').innerHTML='<div class="transcript-bubble">Voice not supported in this browser</div>';return;}
+recognition=new SR();recognition.continuous=false;recognition.interimResults=false;recognition.lang='en-US';
+recognition.onstart=()=>{listening=true;btn.className='mic-btn listening';document.getElementById('micLabel').textContent='Listening... speak your answer';};
+recognition.onend=()=>{listening=false;btn.className='mic-btn ready';document.getElementById('micLabel').textContent='Tap to answer again';};
+recognition.onresult=(e)=>{
+const transcript=e.results[0][0].transcript;
+document.getElementById('transcriptArea').innerHTML='<div class="transcript-bubble">You said: "'+transcript+'"</div>';
+evaluateAnswer(transcript);
+};
+recognition.onerror=()=>{listening=false;btn.className='mic-btn ready';document.getElementById('micLabel').textContent='Tap to try again';};
+recognition.start();
+}
+
+function evaluateAnswer(transcript){
+const q=questions[currentQ];
+const t=transcript.toLowerCase().replace(/[^a-z0-9/ ]/g,'').trim();
+const isCorrect=q.acceptAlt.some(a=>t.includes(a.toLowerCase()))||t.includes(q.answer.toLowerCase());
+const fb=document.getElementById('feedbackArea');
+if(isCorrect){
+score++;
+document.getElementById('scoreValue').textContent=score+'/'+questions.length;
+document.getElementById('qdot'+currentQ).className='q-dot correct';
+fb.innerHTML='<div class="feedback correct">\\u2705 Correct! The answer is '+q.answer+' ('+q.spokenAnswer+')</div>';
+speakFeedback('That\\'s right! Great job Maya! The answer is '+q.spokenAnswer+'!');
+setTimeout(()=>{currentQ++;showQuestion();},4000);
+}else{
+wrongCounts[currentQ]++;
+document.getElementById('qdot'+currentQ).className='q-dot wrong';
+if(wrongCounts[currentQ]>=3){
+fb.innerHTML='<div class="feedback wrong">The answer is '+q.answer+'. '+q.hint+'</div>';
+speakFeedback('That\\'s okay Maya! The answer is '+q.spokenAnswer+'. '+q.hint+'. Let\\'s try the next one!');
+window.parent.postMessage({type:'wrongAnswer',questionText:q.text,wrongCount:wrongCounts[currentQ]},'*');
+window.parent.postMessage({type:'reframeNeeded',questionText:q.text},'*');
+setTimeout(()=>{currentQ++;showQuestion();},5000);
+}else{
+fb.innerHTML='<div class="feedback wrong">Not quite! Try again. '+q.hint+'</div>';
+speakFeedback('Not quite! Here\\'s a hint: '+q.hint+'. Try again!');
+window.parent.postMessage({type:'wrongAnswer',questionText:q.text,wrongCount:wrongCounts[currentQ]},'*');
+setTimeout(()=>{document.getElementById('qdot'+currentQ).className='q-dot active';document.getElementById('micBtn').className='mic-btn ready';document.getElementById('micLabel').textContent='Tap to try again';},3000);
+}
+}
+}
+
+async function speakFeedback(text){
+try{
+const res=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:text})});
+if(res.ok){const blob=await res.blob();new Audio(URL.createObjectURL(blob)).play();}
+}catch(e){}
+}
+
+function showFinalScore(){
+document.getElementById('questionCard').innerHTML='<div class="question-text">Quiz Complete!</div><div class="question-hint">Great job, Maya!</div>';
+document.getElementById('micBtn').style.display='none';
+document.getElementById('micLabel').style.display='none';
+document.getElementById('scoreValue').textContent=score+'/'+questions.length;
+const pct=Math.round(score/questions.length*100);
+speakFeedback('Amazing Maya! You got '+score+' out of '+questions.length+' correct! That\\'s '+pct+' percent! No job is too big, no pup is too small!');
+}
+
+initQuiz();
 </script></body></html>`;
 
 // ================================================================
