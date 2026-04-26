@@ -375,8 +375,8 @@ export default function DemoStudentView() {
           )}
         </div>
 
-        {/* Chat panel (hidden for Auditory — low stimuli, narration only) */}
-        {mode !== 'Auditory' && <div style={{
+        {/* Chat panel */}
+        <div style={{
           width: 320, flexShrink: 0, borderLeft: '1px solid #e5e7eb',
           display: 'flex', flexDirection: 'column', background: 'white',
         }}>
@@ -384,7 +384,7 @@ export default function DemoStudentView() {
             padding: '12px 16px', borderBottom: '1px solid #e5e7eb',
             fontWeight: 600, fontSize: 14, color: modeStyle.color,
           }}>
-            💬 Chat with {character}
+            {mode === 'Auditory' ? '🎙️' : '💬'} {mode === 'Auditory' ? `Talk to ${character}` : `Chat with ${character}`}
             {frustrationEvents.length > 0 && (
               <span style={{
                 marginLeft: 8, padding: '2px 6px', borderRadius: 8,
@@ -397,6 +397,15 @@ export default function DemoStudentView() {
 
           {/* Chat messages */}
           <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+            {chatMessages.length === 0 && mode === 'Auditory' && (
+              <div style={{
+                textAlign: 'center', color: '#78909C', fontSize: 13,
+                padding: '24px 12px', lineHeight: 1.6,
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🎙️</div>
+                Tap the mic button below to ask {character} a question using your voice
+              </div>
+            )}
             {chatMessages.map((msg, i) => (
               <div key={i} style={{
                 marginBottom: 10,
@@ -420,7 +429,7 @@ export default function DemoStudentView() {
                 padding: '8px 12px', borderRadius: 12, background: modeStyle.bg,
                 color: modeStyle.color, fontSize: 13, display: 'inline-block',
               }}>
-                {character} is typing...
+                {character} is {mode === 'Auditory' ? 'thinking...' : 'typing...'}
               </div>
             )}
             <div ref={chatEndRef} />
@@ -454,49 +463,95 @@ export default function DemoStudentView() {
             </div>
           )}
 
-          {/* Chat input */}
-          <div style={{
-            padding: '8px 12px', borderTop: '1px solid #e5e7eb',
-            display: 'flex', gap: 6,
-          }}>
-            <button
-              onClick={startListening}
-              disabled={isListening}
-              title="Voice input"
-              style={{
-                width: 36, height: 36, borderRadius: '50%', border: 'none',
-                background: isListening ? '#DC2626' : '#f3f4f6',
-                color: isListening ? 'white' : '#666',
-                fontSize: 16, cursor: 'pointer', flexShrink: 0,
-                animation: isListening ? 'pulse 1s infinite' : 'none',
-              }}
-            >
-              🎤
-            </button>
-            <input
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSendChat()}
-              placeholder={isListening ? 'Listening...' : `Ask ${character}...`}
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: 20,
-                border: `1.5px solid ${isListening ? '#DC2626' : '#e5e7eb'}`,
-                fontSize: 13, outline: 'none',
-              }}
-            />
-            <button
-              onClick={handleSendChat}
-              disabled={chatLoading}
-              style={{
-                padding: '8px 16px', borderRadius: 20, border: 'none',
-                background: modeStyle.color, color: 'white', fontSize: 13,
-                fontWeight: 600, cursor: 'pointer',
-              }}
-            >
-              Send
-            </button>
-          </div>
-        </div>}
+          {/* Chat input — Auditory: speech-to-text mic, Others: text input */}
+          {mode === 'Auditory' ? (
+            <div style={{
+              padding: '12px', borderTop: '1px solid #e5e7eb',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+            }}>
+              <button
+                onClick={() => { if (isListening) { recognitionRef.current?.stop(); } else { startListening(); } }}
+                style={{
+                  width: 56, height: 56, borderRadius: '50%', border: 'none',
+                  background: isListening ? '#DC2626' : modeStyle.color,
+                  color: 'white', fontSize: 24, cursor: 'pointer',
+                  boxShadow: isListening ? '0 0 0 4px rgba(220,38,38,0.2)' : '0 2px 8px rgba(0,0,0,0.1)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {isListening ? '⏹' : '🎤'}
+              </button>
+              <div style={{ fontSize: 11, color: isListening ? '#DC2626' : '#9CA3AF', fontWeight: 500 }}>
+                {isListening ? 'Listening... tap to stop' : 'Tap to speak'}
+              </div>
+              {chatInput && (
+                <div style={{
+                  display: 'flex', gap: 6, width: '100%', alignItems: 'center',
+                }}>
+                  <div style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 12,
+                    background: '#f3f4f6', fontSize: 13, color: '#374151',
+                  }}>
+                    {chatInput}
+                  </div>
+                  <button
+                    onClick={handleSendChat}
+                    disabled={chatLoading}
+                    style={{
+                      padding: '8px 16px', borderRadius: 16, border: 'none',
+                      background: modeStyle.color, color: 'white', fontSize: 13,
+                      fontWeight: 600, cursor: 'pointer',
+                    }}
+                  >
+                    Send
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{
+              padding: '8px 12px', borderTop: '1px solid #e5e7eb',
+              display: 'flex', gap: 6,
+            }}>
+              <button
+                onClick={startListening}
+                disabled={isListening}
+                title="Voice input"
+                style={{
+                  width: 36, height: 36, borderRadius: '50%', border: 'none',
+                  background: isListening ? '#DC2626' : '#f3f4f6',
+                  color: isListening ? 'white' : '#666',
+                  fontSize: 16, cursor: 'pointer', flexShrink: 0,
+                  animation: isListening ? 'pulse 1s infinite' : 'none',
+                }}
+              >
+                🎤
+              </button>
+              <input
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSendChat()}
+                placeholder={isListening ? 'Listening...' : `Ask ${character}...`}
+                style={{
+                  flex: 1, padding: '8px 12px', borderRadius: 20,
+                  border: `1.5px solid ${isListening ? '#DC2626' : '#e5e7eb'}`,
+                  fontSize: 13, outline: 'none',
+                }}
+              />
+              <button
+                onClick={handleSendChat}
+                disabled={chatLoading}
+                style={{
+                  padding: '8px 16px', borderRadius: 20, border: 'none',
+                  background: modeStyle.color, color: 'white', fontSize: 13,
+                  fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Send
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
