@@ -422,12 +422,12 @@ export const REPORT_ASSIGNMENTS = [
     title: 'Adding Fractions (Q1–Q5)',
     date: 'Apr 26',
     dot: 'coral',
-    studentCount: 5,
+    studentCount: 4,
     questionCount: 5,
     totalReframes: 3,
     overview: {
-      avgScore: { value: 58, sub: 'across 5 students' },
-      completion: { value: '60%', sub: '3 of 5 finished' },
+      avgScore: { value: 60, sub: 'across 4 students' },
+      completion: { value: '75%', sub: '3 of 4 finished' },
       aiReframes: { value: 3, sub: '2 students triggered' },
       avgEngagement: { value: '68%', sub: 'first attempt at topic' },
       scoreByStyle: [
@@ -452,7 +452,6 @@ export const REPORT_ASSIGNMENTS = [
       ],
     },
     students: [
-      { studentId: 'jamie', mode: 'Visual', score: 75, engagement: 78, reframes: 0, pattern: 'None' },
       { studentId: 'maya', mode: 'Auditory', score: 55, engagement: 62, reframes: 1, pattern: 'Rapid clicking on Q2 — narration pace too fast' },
       { studentId: 'eli', mode: 'Kinesthetic', score: 35, engagement: 45, reframes: 2, pattern: 'High frustration: 3 wrong on Q3, typed "this is too hard"' },
       { studentId: 'sofia', mode: 'Reading', score: 80, engagement: 85, reframes: 0, pattern: 'None' },

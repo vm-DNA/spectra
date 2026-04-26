@@ -27,6 +27,7 @@ export default function UploadAssignment() {
   const [generatingStudents, setGeneratingStudents] = useState({});
   const [error, setError]         = useState(null);
   const [approved, setApproved]   = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const { saveLesson } = useLessonContext();
 
@@ -109,18 +110,20 @@ export default function UploadAssignment() {
   };
 
   // Demo mode: instantly load pre-generated lessons
+  const DEMO_STUDENTS = STUDENTS.filter(s => DEMO_ADAPTED_LESSONS[s.id]); // Only students with demo data
   const handleLoadDemo = () => {
     setLoading(false);
     setError(null);
+    setIsDemoMode(true);
     setContent(DEMO_WORKSHEET.rawContent);
     setSubject(DEMO_WORKSHEET.subject);
     const demoStatus = {};
-    STUDENTS.forEach(s => { demoStatus[s.id] = 'ready'; });
+    DEMO_STUDENTS.forEach(s => { demoStatus[s.id] = 'ready'; });
     setGeneratingStudents(demoStatus);
     setAdaptedVersions(DEMO_ADAPTED_LESSONS);
     localStorage.setItem('spectra_adapted_lesson', JSON.stringify(DEMO_ADAPTED_LESSONS));
     setSubmitted(true);
-    setSelectedStudent(STUDENTS[0].id);
+    setSelectedStudent(DEMO_STUDENTS[0].id);
   };
 
   const preview = adaptedVersions?.[selectedStudent];
@@ -214,9 +217,9 @@ export default function UploadAssignment() {
                 padding: '12px 16px', borderBottom: '1px solid var(--border)',
                 fontWeight: 600, fontSize: 14, background: 'var(--bg)',
               }}>
-                Students ({targetStudents.length})
+                Students ({(isDemoMode ? DEMO_STUDENTS : targetStudents).length})
               </div>
-              {targetStudents.map(student => {
+              {(isDemoMode ? DEMO_STUDENTS : targetStudents).map(student => {
                 const status = generatingStudents[student.id] || 'pending';
                 const isSelected = selectedStudent === student.id;
                 const modality = student.learningStyles?.[0] || 'Visual';
@@ -558,8 +561,8 @@ function StudentPreview({ student, preview, modality, modalMeta }) {
           <KinestheticPreview preview={preview} character={character} />
         )}
 
-        {/* Questions preview */}
-        {questions.length > 0 && (
+        {/* Questions preview (skip if interactive HTML already has questions) */}
+        {questions.length > 0 && !preview?.interactiveHtml && (
           <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10 }}>
               Questions ({questions.length})
@@ -594,34 +597,32 @@ function StudentPreview({ student, preview, modality, modalMeta }) {
 
 /* ─── Visual Preview ─── */
 function VisualPreview({ preview, character }) {
-  const imageMap = preview?.imageUrls || {};
-  const visualImage = imageMap.neutral || preview?.imageUrl || null;
   return (
     <div>
       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#7C3AED' }}>
-        Visual Mode — Static images themed to {character}
+        Visual Mode — Cloudinary images as teaching objects, themed to {character}
       </div>
-      {visualImage ? (
-        <div style={{
-          background: '#F5F3FF', borderRadius: 10, padding: 16,
-          textAlign: 'center', marginBottom: 12,
-        }}>
-          <img src={visualImage} alt="Lesson visual" style={{ maxWidth: '100%', borderRadius: 8 }} />
+      {preview?.interactiveHtml ? (
+        <div style={{ marginBottom: 12 }}>
+          <iframe
+            title="Visual lesson preview"
+            srcDoc={preview.interactiveHtml}
+            sandbox="allow-scripts"
+            style={{
+              width: '100%', minHeight: 600, border: '2px solid #C4B5FD',
+              borderRadius: 10, background: '#fff',
+            }}
+          />
+          <div style={{ fontSize: 11, color: '#7C3AED', marginTop: 6 }}>
+            SpongeBob images from Cloudinary used as visual teaching objects
+          </div>
         </div>
-      ) : preview?.cloudinaryPrompt ? (
+      ) : (
         <div style={{
           background: '#F5F3FF', borderRadius: 8, padding: 12,
           fontSize: 12, color: '#7C3AED', marginBottom: 12,
         }}>
-          Image prompt: {preview.cloudinaryPrompt}
-        </div>
-      ) : null}
-      {preview?.formula && (
-        <div style={{
-          background: '#F3F0FF', borderRadius: 8, padding: 12,
-          textAlign: 'center', fontSize: 18, fontWeight: 600, color: '#7C3AED',
-        }}>
-          {preview.formula}
+          Visual lesson will use Cloudinary character images to teach concepts
         </div>
       )}
     </div>
@@ -635,7 +636,22 @@ function AuditoryPreview({ preview, character }) {
       <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#0D9488' }}>
         Auditory Mode — ElevenLabs narration by {character}
       </div>
-      {preview?.audioUrl ? (
+      {preview?.interactiveHtml ? (
+        <div style={{ marginBottom: 12 }}>
+          <iframe
+            title="Auditory lesson preview"
+            srcDoc={preview.interactiveHtml}
+            sandbox="allow-scripts"
+            style={{
+              width: '100%', minHeight: 600, border: '2px solid #5EEAD4',
+              borderRadius: 10, background: '#fff',
+            }}
+          />
+          <div style={{ fontSize: 11, color: '#0D9488', marginTop: 6 }}>
+            Audio player with narration script + voice chat with {character}
+          </div>
+        </div>
+      ) : preview?.audioUrl ? (
         <div style={{
           background: '#E6FFFA', borderRadius: 8, padding: 16,
           textAlign: 'center', marginBottom: 12,
@@ -653,7 +669,7 @@ function AuditoryPreview({ preview, character }) {
           Audio narration will be generated via ElevenLabs
         </div>
       )}
-      {preview?.elevenLabsScript && (
+      {preview?.elevenLabsScript && !preview?.interactiveHtml && (
         <div style={{
           background: '#F0FDFA', borderRadius: 8, padding: 12,
           fontSize: 12, fontStyle: 'italic', color: '#115E59', marginBottom: 12,

@@ -1,22 +1,17 @@
 // ============================================================
-//  demoData.js
-//  Pre-generated lesson data for demo/hackathon presentations.
-//  These are pre-approved lessons that load instantly without
-//  waiting for AI generation. Each student gets their modality-
-//  specific content themed to their character.
+//  demoData.js — Pre-generated demo lessons for hackathon
+//  Load instantly via "Load Demo" button. No AI wait needed.
 // ============================================================
 
-// Cloudinary-hosted character images (uploaded via scripts/upload-cloudinary-characters.js)
+const SB = 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png';
+const KRABS = 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/mrkrabs.png';
+const KRABBY = 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189932/spectra/spongebob/krabby-patty.png';
+const PATRICK = 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189933/spectra/spongebob/patrick.png';
+const ROCK = 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189930/spectra/spongebob/patricks-rock.png';
+const KRABS_MONEY = 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189929/spectra/spongebob/mrkrabs-money.png';
+
 export const CLOUDINARY_CHARACTERS = {
-  spongebob: [
-    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189929/spectra/spongebob/mrkrabs-money.png',
-    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189932/spectra/spongebob/krabby-patty.png',
-    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/mrkrabs.png',
-    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189930/spectra/spongebob/patricks-rock.png',
-    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189933/spectra/spongebob/patrick.png',
-  ],
-  // Other characters: upload images to Cloudinary and tag them to enable
+  spongebob: [SB, KRABS_MONEY, KRABBY, KRABS, ROCK, PATRICK],
   bluey: [],
   pawpatrol: [],
   minecraft: [],
@@ -38,207 +33,532 @@ Remember: When adding fractions with different denominators,
 find the common denominator first!`,
 };
 
-// Pre-generated adapted lessons for each student
+// ─── QUESTIONS (shared across some modes) ──────────────────────
+const FRACTION_QUESTIONS = [
+  { id: 'dq1', text: '4/5 + 1/3 = ?', options: ['17/15', '5/8', '12/15', '7/15'], correctIndex: 0, hint: 'Common denominator is 15. 4/5 = 12/15, 1/3 = 5/15. Add: 17/15' },
+  { id: 'dq2', text: '2/7 + 3/4 = ?', options: ['5/11', '29/28', '23/28', '8/28'], correctIndex: 1, hint: 'Common denominator is 28. 2/7 = 8/28, 3/4 = 21/28. Add: 29/28' },
+  { id: 'dq3', text: '1/2 + 2/3 = ?', options: ['3/5', '5/6', '7/6', '4/6'], correctIndex: 2, hint: 'Common denominator is 6. 1/2 = 3/6, 2/3 = 4/6. Add: 7/6' },
+  { id: 'dq4', text: '3/8 + 1/4 = ?', options: ['4/12', '5/8', '4/8', '7/8'], correctIndex: 1, hint: 'Common denominator is 8. 1/4 = 2/8. Add: 3+2 = 5/8' },
+  { id: 'dq5', text: '5/6 + 1/2 = ?', options: ['6/8', '4/3', '7/6', '8/6'], correctIndex: 2, hint: '1/2 = 3/6, so 5/6 + 3/6 = 8/6' },
+];
+
+// ================================================================
+//  AISHA — Visual / SpongeBob
+//  Uses Cloudinary SpongeBob images AS teaching objects.
+//  Images are resized and placed to illustrate math concepts.
+// ================================================================
+const AISHA_VISUAL_HTML = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Comic Sans MS',cursive,sans-serif;background:linear-gradient(180deg,#87CEEB 0%,#87CEEB 65%,#F4D03F 65%,#F4D03F 100%);min-height:100vh;padding:16px}
+.container{max-width:850px;margin:0 auto}
+.header{text-align:center;background:rgba(255,255,255,0.95);border-radius:20px;padding:16px 20px;margin-bottom:16px;border:4px solid #FFE135;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.header h1{color:#8B4513;font-size:26px;margin-bottom:4px}
+.header p{color:#666;font-size:13px}
+.lesson-card{background:white;border-radius:16px;padding:20px;margin-bottom:16px;border:3px solid #FFE135;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.lesson-card h2{color:#8B4513;font-size:18px;margin-bottom:12px;text-align:center}
+.equation-row{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap}
+.img-group{display:flex;gap:4px;align-items:center;background:#FFF8DC;border-radius:12px;padding:8px 12px;border:2px dashed #F4D03F}
+.img-group img{width:48px;height:48px;object-fit:contain;transition:transform 0.3s}
+.img-group img:hover{transform:scale(1.2) rotate(5deg)}
+.op{font-size:32px;font-weight:bold;color:#8B4513}
+.answer-box{min-width:60px;height:50px;border:3px dashed #FF6B35;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#FF6B35;cursor:pointer;transition:all 0.3s;background:#FFF5F0}
+.answer-box:hover{background:#FFE0CC;transform:scale(1.05)}
+.answer-box.correct{border-color:#4CAF50;background:#E8F5E9;color:#2E7D32}
+.answer-box.wrong{border-color:#F44336;background:#FFEBEE;color:#C62828;animation:shake 0.4s}
+.fraction-visual{display:flex;gap:6px;justify-content:center;margin:12px 0}
+.fraction-piece{width:40px;height:50px;border-radius:6px;border:2px solid #8B4513;display:flex;align-items:center;justify-content:center;overflow:hidden;transition:all 0.3s}
+.fraction-piece.filled{background:#FFE135}
+.fraction-piece.empty{background:#f5f5f5}
+.fraction-piece img{width:100%;height:100%;object-fit:cover;opacity:0.8}
+.fraction-label{text-align:center;font-weight:bold;color:#8B4513;font-size:14px;margin-top:4px}
+.speech{display:flex;align-items:flex-start;gap:12px;background:#FFF8DC;border-radius:16px;padding:14px;margin-bottom:16px;border:2px solid #FFE135}
+.speech img{width:64px;height:64px;object-fit:contain;flex-shrink:0}
+.speech-text{flex:1;font-size:14px;line-height:1.5;color:#333}
+.speech-text strong{color:#FF6B35}
+.problem-section{margin:16px 0;padding:16px;background:#FFFDE7;border-radius:12px;border:2px solid #FFF176}
+.problem-title{font-size:16px;font-weight:bold;color:#F57F17;margin-bottom:12px;text-align:center}
+.options-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+.opt-btn{padding:10px 20px;border-radius:10px;border:2px solid #ccc;background:white;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.opt-btn:hover{border-color:#FF6B35;background:#FFF5F0;transform:translateY(-2px)}
+.opt-btn.selected-correct{border-color:#4CAF50;background:#E8F5E9;color:#2E7D32}
+.opt-btn.selected-wrong{border-color:#F44336;background:#FFEBEE;color:#C62828;animation:shake 0.4s}
+.result-msg{text-align:center;padding:10px;margin-top:10px;border-radius:8px;font-weight:bold;font-size:14px}
+.result-msg.correct{background:#E8F5E9;color:#2E7D32}
+.result-msg.wrong{background:#FFEBEE;color:#C62828}
+.progress{display:flex;gap:6px;justify-content:center;margin:12px 0}
+.dot{width:14px;height:14px;border-radius:50%;background:#ddd;transition:all 0.3s}
+.dot.done{background:#4CAF50}.dot.current{background:#FF6B35;transform:scale(1.3)}
+.step-box{background:#E3F2FD;border-radius:10px;padding:12px;margin:8px 0;font-size:13px;border-left:4px solid #2196F3}
+.step-box strong{color:#1565C0}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.bounce{animation:bounce 0.6s ease}
+.confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99}
+</style></head><body>
+<div class="container">
+<div class="header">
+<h1>SpongeBob's Krabby Patty Fractions!</h1>
+<p>Use SpongeBob characters to learn how to add fractions</p>
+<div class="progress" id="progress"></div>
+</div>
+
+<div class="speech">
+<img src="${SB}" alt="SpongeBob">
+<div class="speech-text"><strong>SpongeBob says:</strong> "I'm ready! I'm ready! Let's learn fractions using Krabby Patties! When we add fractions, we need to make sure all the pieces are the <strong>same size</strong> first!"</div>
+</div>
+
+<div id="lessonArea"></div>
+<div id="confettiBox" class="confetti"></div>
+</div>
+
+<script>
+const SB='${SB}',KRABS='${KRABS}',KRABBY='${KRABBY}',PATRICK='${PATRICK}',ROCK='${ROCK}',KRABS_MONEY='${KRABS_MONEY}';
+const problems=[
+{q:'4/5 + 1/3',a:'17/15',opts:['17/15','5/8','12/15','7/15'],n1:4,d1:5,n2:1,d2:3,lcd:15,cn1:12,cn2:5,img1:SB,img2:KRABBY,
+explain:'SpongeBob has 4 out of 5 Krabby Patties, and Patrick brings 1 out of 3 more. To add them, cut everything into 15 equal pieces!'},
+{q:'2/7 + 3/4',a:'29/28',opts:['5/11','29/28','23/28','8/28'],n1:2,d1:7,n2:3,d2:4,lcd:28,cn1:8,cn2:21,img1:PATRICK,img2:KRABS,
+explain:'Patrick has 2 out of 7 jellyfishing nets, and Mr. Krabs has 3 out of 4. Cut into 28 pieces to add!'},
+{q:'1/2 + 2/3',a:'7/6',opts:['3/5','5/6','7/6','4/6'],n1:1,d1:2,n2:2,d2:3,lcd:6,cn1:3,cn2:4,img1:SB,img2:PATRICK,
+explain:'SpongeBob has half a Krabby Patty, Patrick has 2/3 of one. Cut into 6 equal pieces to combine!'},
+{q:'3/8 + 1/4',a:'5/8',opts:['4/12','5/8','4/8','7/8'],n1:3,d1:8,n2:1,d2:4,lcd:8,cn1:3,cn2:2,img1:KRABBY,img2:KRABBY,
+explain:'3/8 of a Krabby Patty plus 1/4 of another. Since 4 fits into 8, just convert 1/4 to 2/8!'},
+{q:'5/6 + 1/2',a:'8/6',opts:['6/8','4/3','7/6','8/6'],n1:5,d1:6,n2:1,d2:2,lcd:6,cn1:5,cn2:3,img1:KRABS,img2:SB,
+explain:'Mr. Krabs has 5/6 of the money, SpongeBob has 1/2. Convert to sixths to add!'}
+];
+let cur=0,score=0,answered=new Set();
+
+function renderProgress(){
+let h='';for(let i=0;i<problems.length;i++){h+='<div class="dot '+(answered.has(i)?'done':i===cur?'current':'')+'"></div>';}
+document.getElementById('progress').innerHTML=h;}
+
+function renderProblem(){
+if(cur>=problems.length){renderComplete();return;}
+const p=problems[cur];
+let h='<div class="lesson-card"><h2>Problem '+(cur+1)+': '+p.q+' = ?</h2>';
+// Visual explanation with character images
+h+='<div class="speech"><img src="'+p.img1+'" alt="character"><div class="speech-text">'+p.explain+'</div></div>';
+// Show fraction visually with character images as pieces
+h+='<div class="equation-row">';
+// First fraction: show n1 filled images out of d1
+h+='<div><div class="img-group">';
+for(let i=0;i<p.d1;i++){
+if(i<p.n1) h+='<img src="'+p.img1+'" alt="filled" style="width:40px;height:40px">';
+else h+='<div style="width:40px;height:40px;border:2px dashed #ccc;border-radius:6px;opacity:0.3"></div>';
+}
+h+='</div><div class="fraction-label">'+p.n1+'/'+p.d1+'</div></div>';
+h+='<span class="op">+</span>';
+// Second fraction
+h+='<div><div class="img-group">';
+for(let i=0;i<p.d2;i++){
+if(i<p.n2) h+='<img src="'+p.img2+'" alt="filled" style="width:40px;height:40px">';
+else h+='<div style="width:40px;height:40px;border:2px dashed #ccc;border-radius:6px;opacity:0.3"></div>';
+}
+h+='</div><div class="fraction-label">'+p.n2+'/'+p.d2+'</div></div>';
+h+='</div>';
+// Step-by-step conversion
+h+='<div class="step-box"><strong>Step 1:</strong> Find common denominator: LCD of '+p.d1+' and '+p.d2+' = <strong>'+p.lcd+'</strong></div>';
+h+='<div class="step-box"><strong>Step 2:</strong> Convert: '+p.n1+'/'+p.d1+' = '+p.cn1+'/'+p.lcd+' and '+p.n2+'/'+p.d2+' = '+p.cn2+'/'+p.lcd+'</div>';
+h+='<div class="step-box"><strong>Step 3:</strong> Add numerators: '+p.cn1+' + '+p.cn2+' = <strong>'+(p.cn1+p.cn2)+'</strong></div>';
+// Show the converted fractions with images
+h+='<div class="equation-row">';
+h+='<div><div class="fraction-visual">';
+for(let i=0;i<Math.min(p.lcd,10);i++){
+h+='<div class="fraction-piece '+(i<p.cn1?'filled':'empty')+'"><img src="'+p.img1+'" alt="" style="opacity:'+(i<p.cn1?'0.9':'0.15')+'"></div>';
+}
+h+='</div><div class="fraction-label">'+p.cn1+'/'+p.lcd+'</div></div>';
+h+='<span class="op" style="font-size:24px">+</span>';
+h+='<div><div class="fraction-visual">';
+for(let i=0;i<Math.min(p.lcd,10);i++){
+h+='<div class="fraction-piece '+(i<p.cn2?'filled':'empty')+'"><img src="'+p.img2+'" alt="" style="opacity:'+(i<p.cn2?'0.9':'0.15')+'"></div>';
+}
+h+='</div><div class="fraction-label">'+p.cn2+'/'+p.lcd+'</div></div>';
+h+='</div>';
+// Answer options
+h+='<div class="problem-section"><div class="problem-title">What is '+p.q+'?</div><div class="options-row" id="opts">';
+p.opts.forEach((o,i)=>{h+='<button class="opt-btn" onclick="checkAns('+i+',\\''+o+'\\',\\''+p.a+'\\')">'+o+'</button>';});
+h+='</div><div id="feedback"></div></div></div>';
+document.getElementById('lessonArea').innerHTML=h;
+}
+
+function checkAns(i,sel,correct){
+if(answered.has(cur))return;
+const btns=document.querySelectorAll('.opt-btn');
+if(sel===correct){
+btns[i].classList.add('selected-correct');
+document.getElementById('feedback').innerHTML='<div class="result-msg correct">Correct! Great job! 🎉</div>';
+score++;answered.add(cur);renderProgress();
+setTimeout(()=>{cur++;renderProblem();},1500);
+}else{
+btns[i].classList.add('selected-wrong');
+document.getElementById('feedback').innerHTML='<div class="result-msg wrong">Not quite! Try again!</div>';
+setTimeout(()=>{btns[i].classList.remove('selected-wrong');document.getElementById('feedback').innerHTML='';},1500);
+}}
+
+function renderComplete(){
+let h='<div class="lesson-card" style="text-align:center"><h2>All Done! 🎉</h2>';
+h+='<div style="font-size:48px;margin:16px 0"><img src="'+SB+'" style="width:80px"> <img src="'+PATRICK+'" style="width:80px"> <img src="'+KRABS+'" style="width:80px"></div>';
+h+='<div style="font-size:20px;font-weight:bold;color:#4CAF50">Score: '+score+'/'+problems.length+'</div>';
+h+='<div style="margin-top:12px;color:#666">SpongeBob and friends are proud of you!</div></div>';
+document.getElementById('lessonArea').innerHTML=h;
+// confetti
+const c=document.getElementById('confettiBox');const colors=['#FFE135','#FF6B35','#4CAF50','#2196F3','#E91E63'];
+for(let i=0;i<50;i++){const d=document.createElement('div');d.style.cssText='position:absolute;width:10px;height:10px;background:'+colors[Math.floor(Math.random()*5)]+';left:'+Math.random()*100+'%;animation:fall '+(2+Math.random()*3)+'s linear '+Math.random()*2+'s forwards';c.appendChild(d);}
+const style=document.createElement('style');style.textContent='@keyframes fall{0%{top:-10px;transform:rotate(0)}100%{top:100vh;transform:rotate(720deg);opacity:0}}';document.head.appendChild(style);
+}
+
+renderProgress();renderProblem();
+</script></body></html>`;
+
+// ================================================================
+//  MAYA — Auditory / Paw Patrol
+//  Shows audio player with narration script + voice chat
+// ================================================================
+const MAYA_AUDITORY_HTML = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#1565C0 0%,#42A5F5 100%);min-height:100vh;padding:20px;color:#333}
+.container{max-width:700px;margin:0 auto}
+.header{background:white;border-radius:20px;padding:20px;text-align:center;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.header h1{color:#1565C0;font-size:24px;margin-bottom:4px}
+.card{background:white;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.audio-player{background:#E3F2FD;border-radius:16px;padding:20px;text-align:center;margin-bottom:12px;border:3px solid #1565C0}
+.play-btn{width:64px;height:64px;border-radius:50%;background:#1565C0;border:none;color:white;font-size:24px;cursor:pointer;transition:all 0.2s;margin:8px}
+.play-btn:hover{background:#0D47A1;transform:scale(1.1)}
+.play-btn.playing{background:#4CAF50;animation:pulse-play 1.5s infinite}
+@keyframes pulse-play{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,0.4)}50%{box-shadow:0 0 0 15px rgba(76,175,80,0)}}
+.waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:40px;margin:12px 0}
+.wave-bar{width:4px;background:#1565C0;border-radius:2px;transition:height 0.15s}
+.narration-text{background:#FFFDE7;border-radius:12px;padding:16px;font-size:14px;line-height:1.8;border-left:4px solid #FFC107;max-height:200px;overflow-y:auto}
+.narration-text .highlight{background:#FFF176;padding:1px 4px;border-radius:3px;font-weight:bold}
+.chat-section{margin-top:12px}
+.chat-bubble{padding:10px 16px;border-radius:16px;margin-bottom:8px;font-size:13px;max-width:85%}
+.chat-bubble.ai{background:#E3F2FD;border-bottom-left-radius:4px;color:#1565C0}
+.chat-bubble.user{background:#C8E6C9;border-bottom-right-radius:4px;margin-left:auto;color:#2E7D32}
+.chat-input{display:flex;gap:8px;margin-top:8px}
+.chat-input input{flex:1;padding:10px 14px;border:2px solid #ddd;border-radius:24px;font-size:13px;outline:none}
+.chat-input input:focus{border-color:#1565C0}
+.chat-input button{padding:10px 20px;background:#1565C0;color:white;border:none;border-radius:24px;cursor:pointer;font-weight:bold}
+.speed-controls{display:flex;gap:8px;justify-content:center;margin:8px 0}
+.speed-btn{padding:4px 12px;border-radius:12px;border:1px solid #1565C0;background:white;color:#1565C0;cursor:pointer;font-size:12px}
+.speed-btn.active{background:#1565C0;color:white}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+.badge-blue{background:#E3F2FD;color:#1565C0}
+.badge-green{background:#E8F5E9;color:#2E7D32}
+</style></head><body>
+<div class="container">
+<div class="header">
+<h1>🐾 Paw Patrol Fraction Lesson</h1>
+<p><span class="badge badge-blue">Auditory Mode</span> Listen and learn with Ryder!</p>
+</div>
+
+<div class="audio-player">
+<div style="font-weight:bold;color:#1565C0;margin-bottom:8px">Ryder's Fraction Lesson</div>
+<button class="play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+<div class="waveform" id="waveform"></div>
+<div class="speed-controls">
+<button class="speed-btn" onclick="setSpeed(0.8)">0.8x</button>
+<button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+<button class="speed-btn" onclick="setSpeed(1.2)">1.2x</button>
+</div>
+<div style="font-size:11px;color:#666;margin-top:4px">
+<span class="badge badge-green">ElevenLabs TTS</span> Duration: 1:40 · Voice: Ryder
+</div>
+</div>
+
+<div class="card">
+<div style="font-weight:bold;color:#1565C0;margin-bottom:8px">📜 Narration Script</div>
+<div class="narration-text" id="narrationText">
+<p>Hey Maya! It's <span class="highlight">Ryder from Paw Patrol</span> here! Today we're going to learn about <span class="highlight">adding fractions</span> together, and the pups are going to help us!</p>
+<p style="margin-top:8px">Imagine <span class="highlight">Chase</span> and <span class="highlight">Marshall</span> are sharing dog treats. If Chase has <span class="highlight">4 out of 5</span> treats in one bowl, that's four-fifths. And if Marshall has <span class="highlight">1 out of 3</span> treats in another bowl, that's one-third.</p>
+<p style="margin-top:8px">To add these fractions together, we need to make sure the <span class="highlight">pieces are the same size</span>. We call this finding a <span class="highlight">common denominator</span>. For 5 and 3, both go into <span class="highlight">15</span>.</p>
+<p style="margin-top:8px">So four-fifths becomes <span class="highlight">twelve-fifteenths</span>, and one-third becomes <span class="highlight">five-fifteenths</span>.</p>
+<p style="margin-top:8px">Now we can add them: <span class="highlight">12/15 + 5/15 = 17/15</span>! That's more than one whole!</p>
+<p style="margin-top:8px"><span class="highlight">No job is too big, no pup is too small!</span> You've got this, Maya!</p>
+</div>
+</div>
+
+<div class="card chat-section">
+<div style="font-weight:bold;color:#1565C0;margin-bottom:8px">💬 Talk to Ryder</div>
+<div id="chatMessages">
+<div class="chat-bubble ai">Hi Maya! I just explained how to add fractions. Do you have any questions? You can ask me anything!</div>
+</div>
+<div class="chat-input">
+<input type="text" id="chatInput" placeholder="Ask Ryder a question..." onkeypress="if(event.key==='Enter')sendChat()">
+<button onclick="sendChat()">Ask</button>
+</div>
+</div>
+</div>
+
+<script>
+let playing=false,waveInterval;
+// Build waveform bars
+const wf=document.getElementById('waveform');
+for(let i=0;i<40;i++){const b=document.createElement('div');b.className='wave-bar';b.style.height='8px';wf.appendChild(b);}
+const bars=document.querySelectorAll('.wave-bar');
+
+function togglePlay(){
+playing=!playing;
+const btn=document.getElementById('playBtn');
+if(playing){btn.textContent='⏸';btn.classList.add('playing');animateWave();}
+else{btn.textContent='▶';btn.classList.remove('playing');clearInterval(waveInterval);bars.forEach(b=>b.style.height='8px');}
+}
+function animateWave(){
+waveInterval=setInterval(()=>{bars.forEach(b=>{b.style.height=(4+Math.random()*32)+'px';});},150);
+}
+function setSpeed(s){
+document.querySelectorAll('.speed-btn').forEach(b=>{b.classList.remove('active');if(b.textContent===s+'x')b.classList.add('active');});
+}
+const responses={
+'common denominator':'Great question! A common denominator is a number that both bottom numbers can divide into evenly. For 5 and 3, the smallest common denominator is 15 because both 5 and 3 divide evenly into 15!',
+'help':"Of course I'll help! Which problem are you stuck on? Tell me the fractions and we'll work through it step by step!",
+'hard':"I know fractions can seem tricky at first, but you're doing great! Remember: Step 1 — find the common denominator. Step 2 — convert. Step 3 — add the tops. You've got this!",
+};
+function sendChat(){
+const input=document.getElementById('chatInput');const msg=input.value.trim();if(!msg)return;
+const chat=document.getElementById('chatMessages');
+chat.innerHTML+='<div class="chat-bubble user">'+msg+'</div>';
+input.value='';
+const key=Object.keys(responses).find(k=>msg.toLowerCase().includes(k));
+const reply=key?responses[key]:"That's a great question! When adding fractions, always remember to find the common denominator first, then convert both fractions, and finally add the numerators. Would you like me to walk through a specific problem?";
+setTimeout(()=>{chat.innerHTML+='<div class="chat-bubble ai">'+reply+'</div>';chat.scrollTop=chat.scrollHeight;},800);
+}
+</script></body></html>`;
+
+// ================================================================
+//  ELI — Kinesthetic / Minecraft Steve
+//  Fully interactive: drag blocks, sliders, animated fraction bars
+// ================================================================
+const ELI_KINESTHETIC_HTML = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Courier New',monospace;background:linear-gradient(180deg,#87CEEB 0%,#87CEEB 55%,#228B22 55%,#228B22 100%);min-height:100vh;color:#333;padding:16px}
+.container{max-width:900px;margin:0 auto}
+.header{background:#5D4037;border:4px solid #3E2723;padding:14px;text-align:center;margin-bottom:16px}
+.header h1{color:#8BC34A;font-size:24px;text-shadow:2px 2px #2E7D32;letter-spacing:2px}
+.progress{display:flex;gap:4px;justify-content:center;margin-top:8px}
+.p-dot{width:16px;height:16px;background:#795548;border:2px solid #3E2723}.p-dot.done{background:#8BC34A}.p-dot.cur{background:#FF9800}
+.tabs{display:flex;gap:3px;margin-bottom:12px}
+.tab{flex:1;padding:10px;background:#795548;color:white;border:3px solid #3E2723;cursor:pointer;text-align:center;font-weight:bold;font-family:inherit;font-size:13px}
+.tab.active{background:#8BC34A;color:#1B5E20}
+.panel{background:rgba(255,255,255,0.96);border:4px solid #5D4037;padding:20px;min-height:400px;display:none}
+.panel.active{display:block}
+.mc-card{background:#EFEBE9;border:3px solid #5D4037;padding:16px;margin-bottom:12px}
+.mc-card h3{color:#3E2723;margin-bottom:10px}
+.block-row{display:flex;gap:3px;flex-wrap:wrap;margin:8px 0}
+.block{width:40px;height:40px;border:2px solid rgba(0,0,0,0.3);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold}
+.block.filled{background:#8BC34A;box-shadow:inset -2px -2px 0 #689F38,inset 2px 2px 0 #AED581}
+.block.empty{background:#BCAAA4;box-shadow:inset -2px -2px 0 #8D6E63,inset 2px 2px 0 #D7CCC8}
+.block:hover{transform:scale(1.15);z-index:1}
+.slider-group{margin:16px 0;text-align:center}
+.slider-group input[type=range]{width:90%;height:20px;-webkit-appearance:none;background:#795548;border:3px solid #3E2723}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:#8BC34A;border:3px solid #2E7D32;cursor:grab}
+.slider-label{font-size:22px;font-weight:bold;color:#5D4037;margin:8px 0}
+.btn{padding:10px 20px;font-family:inherit;font-size:14px;font-weight:bold;border:3px solid #3E2723;cursor:pointer;margin:4px}
+.btn-green{background:#8BC34A;color:#1B5E20}.btn-green:hover{background:#AED581}
+.btn-blue{background:#2196F3;color:white}.btn-blue:hover{background:#64B5F6}
+.btn-orange{background:#FF9800;color:white}.btn-orange:hover{background:#FFB74D}
+.drag-zone{min-height:60px;border:3px dashed #795548;border-radius:8px;padding:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;transition:background 0.2s}
+.drag-zone.over{background:#E8F5E9;border-color:#4CAF50}
+.draggable{cursor:grab;user-select:none}
+.draggable:active{cursor:grabbing}
+.result{padding:12px;margin:8px 0;font-weight:bold;text-align:center;font-size:16px;border:3px solid}
+.result.correct{background:#E8F5E9;border-color:#4CAF50;color:#2E7D32}
+.result.wrong{background:#FFEBEE;border-color:#F44336;color:#C62828;animation:shake 0.4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.score-bar{background:#5D4037;color:#8BC34A;padding:6px 14px;display:inline-block;font-weight:bold;border:3px solid #3E2723}
+.confetti-box{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
+</style></head><body>
+<div class="container">
+<div class="header">
+<h1>⛏ Steve's Fraction Workshop ⛏</h1>
+<div class="progress" id="progress"></div>
+</div>
+<div class="tabs">
+<div class="tab active" id="t0" onclick="showTab(0)">🔨 Learn</div>
+<div class="tab" id="t1" onclick="showTab(1)">🎮 Explore</div>
+<div class="tab" id="t2" onclick="showTab(2)">⚔ Practice</div>
+</div>
+
+<!-- LEARN TAB -->
+<div class="panel active" id="p0">
+<div class="mc-card">
+<h3>How Fraction Blocks Work</h3>
+<p style="margin-bottom:10px;font-size:13px">In Minecraft, everything is blocks. Fractions work the same way! The <strong>denominator</strong> (bottom) tells us how many blocks total. The <strong>numerator</strong> (top) tells us how many are filled.</p>
+<p style="font-size:13px;margin-bottom:8px"><strong>Click the blocks below to fill or empty them!</strong></p>
+<div class="block-row" id="learnBlocks"></div>
+<div class="slider-label" id="learnLabel">0/8</div>
+</div>
+<div class="mc-card">
+<h3>Adding Fractions: 4/5 + 1/3</h3>
+<p style="font-size:13px;margin-bottom:8px">Step 1: Make blocks the same size (find LCD = 15)</p>
+<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center">
+<div><div class="block-row" id="frac1"></div><div style="text-align:center;font-weight:bold">4/5 = 12/15</div></div>
+<span style="font-size:28px;font-weight:bold">+</span>
+<div><div class="block-row" id="frac2"></div><div style="text-align:center;font-weight:bold">1/3 = 5/15</div></div>
+<span style="font-size:28px;font-weight:bold">=</span>
+<div><div class="block-row" id="fracResult"></div><div style="text-align:center;font-weight:bold;color:#2E7D32">17/15!</div></div>
+</div>
+<button class="btn btn-orange" onclick="showTab(1)" style="margin-top:12px">Next: Explore →</button>
+</div>
+</div>
+
+<!-- EXPLORE TAB -->
+<div class="panel" id="p1">
+<div class="mc-card">
+<h3>🎮 Build Your Own Fractions</h3>
+<p style="font-size:13px">Drag the sliders to build fractions and see the blocks change!</p>
+<div class="slider-group">
+<label>Numerator: <strong id="numVal">1</strong></label><br>
+<input type="range" min="0" max="12" value="1" id="numSlider" oninput="updateExplorer()">
+</div>
+<div class="slider-group">
+<label>Denominator: <strong id="denVal">4</strong></label><br>
+<input type="range" min="1" max="12" value="4" id="denSlider" oninput="updateExplorer()">
+</div>
+<div class="slider-label" id="exploreLabel">1/4</div>
+<div class="block-row" id="exploreBlocks" style="justify-content:center"></div>
+<div style="margin-top:12px;padding:10px;background:#E8F5E9;border-radius:8px;text-align:center;font-size:13px" id="exploreInfo">That's 25% of the blocks!</div>
+</div>
+<div class="mc-card">
+<h3>🧱 Drag & Drop Challenge</h3>
+<p style="font-size:13px;margin-bottom:8px">Drag the green blocks into the drop zone to make 3/5:</p>
+<div class="block-row" id="dragSource" style="margin-bottom:8px"></div>
+<div class="drag-zone" id="dropZone"><span style="color:#999;font-size:12px">Drop blocks here to make 3/5</span></div>
+<div id="dragFeedback"></div>
+</div>
+<button class="btn btn-orange" onclick="showTab(2)" style="margin-top:8px">Ready to Practice! →</button>
+</div>
+
+<!-- PRACTICE TAB -->
+<div class="panel" id="p2">
+<div class="score-bar">Score: <span id="score">0</span> / 5</div>
+<div id="practiceArea"></div>
+<div id="confettiBox" class="confetti-box"></div>
+</div>
+</div>
+
+<script>
+// LEARN TAB: clickable blocks
+(function(){
+const c=document.getElementById('learnBlocks');
+for(let i=0;i<8;i++){const b=document.createElement('div');b.className='block empty';b.onclick=function(){this.classList.toggle('filled');this.classList.toggle('empty');updateLearnLabel();};c.appendChild(b);}
+})();
+function updateLearnLabel(){const f=document.querySelectorAll('#learnBlocks .filled').length;document.getElementById('learnLabel').textContent=f+'/8';}
+
+// LEARN: fraction visualization
+function buildFracBlocks(el,filled,total){const c=document.getElementById(el);c.innerHTML='';for(let i=0;i<total;i++){const b=document.createElement('div');b.className='block '+(i<filled?'filled':'empty');b.style.width='24px';b.style.height='24px';c.appendChild(b);}}
+buildFracBlocks('frac1',12,15);buildFracBlocks('frac2',5,15);buildFracBlocks('fracResult',15,15);
+
+// EXPLORE TAB
+function updateExplorer(){
+const n=parseInt(document.getElementById('numSlider').value),d=parseInt(document.getElementById('denSlider').value);
+document.getElementById('numVal').textContent=n;document.getElementById('denVal').textContent=d;
+document.getElementById('exploreLabel').textContent=n+'/'+d;
+const c=document.getElementById('exploreBlocks');c.innerHTML='';
+for(let i=0;i<d;i++){const b=document.createElement('div');b.className='block '+(i<n?'filled':'empty');c.appendChild(b);}
+const pct=d>0?Math.round(n/d*100):0;
+document.getElementById('exploreInfo').textContent=pct+'% of the blocks!'+(n>d?' That\\'s more than one whole!':'');
+}
+updateExplorer();
+
+// DRAG & DROP
+let dragCount=0;
+(function(){
+const src=document.getElementById('dragSource');
+for(let i=0;i<5;i++){const b=document.createElement('div');b.className='block filled draggable';b.draggable=true;b.ondragstart=function(e){e.dataTransfer.setData('text','block');};src.appendChild(b);}
+const dz=document.getElementById('dropZone');
+dz.ondragover=function(e){e.preventDefault();this.classList.add('over');};
+dz.ondragleave=function(){this.classList.remove('over');};
+dz.ondrop=function(e){e.preventDefault();this.classList.remove('over');dragCount++;
+if(dragCount<=3){const b=document.createElement('div');b.className='block filled';b.style.width='40px';b.style.height='40px';this.appendChild(b);}
+if(dragCount===3){document.getElementById('dragFeedback').innerHTML='<div class="result correct">You made 3/5! Great building!</div>';}
+if(dragCount>3){document.getElementById('dragFeedback').innerHTML='<div class="result wrong">Too many blocks! That\\'s more than 3/5.</div>';}
+};
+})();
+
+// TABS
+function showTab(i){document.querySelectorAll('.panel').forEach((p,j)=>{p.classList.toggle('active',j===i);});document.querySelectorAll('.tab').forEach((t,j)=>{t.classList.toggle('active',j===i);});if(i===2&&!practiceStarted)startPractice();}
+
+// PRACTICE
+const problems=[{q:'4/5 + 1/3',a:'17/15',opts:['17/15','5/8','12/15','7/15']},{q:'2/7 + 3/4',a:'29/28',opts:['5/11','29/28','23/28','8/28']},{q:'1/2 + 2/3',a:'7/6',opts:['3/5','5/6','7/6','4/6']},{q:'3/8 + 1/4',a:'5/8',opts:['4/12','5/8','4/8','7/8']},{q:'5/6 + 1/2',a:'8/6',opts:['6/8','4/3','7/6','8/6']}];
+let cur=0,score=0,answered=new Set(),practiceStarted=false;
+
+function renderProgress(){let h='';for(let i=0;i<5;i++){h+='<div class="p-dot '+(answered.has(i)?'done':i===cur?'cur':'')+'"></div>';}document.getElementById('progress').innerHTML=h;}
+
+function startPractice(){practiceStarted=true;renderProgress();renderQ();}
+
+function renderQ(){
+if(cur>=5){document.getElementById('practiceArea').innerHTML='<div class="result correct" style="font-size:20px;margin-top:16px">All Done! Score: '+score+'/5 — Great crafting!</div>';celebrate();return;}
+const p=problems[cur];
+let h='<div class="mc-card"><h3>Problem '+(cur+1)+': '+p.q+' = ?</h3><div style="display:flex;gap:8px;flex-wrap:wrap;margin:12px 0">';
+p.opts.forEach((o,i)=>{h+='<button class="btn btn-blue" onclick="checkA('+i+',\\''+o+'\\',\\''+p.a+'\\')">'+o+'</button>';});
+h+='</div><div id="fb"></div></div>';
+document.getElementById('practiceArea').innerHTML=h;
+}
+
+function checkA(i,sel,ans){
+if(answered.has(cur))return;
+if(sel===ans){score++;answered.add(cur);document.getElementById('score').textContent=score;document.getElementById('fb').innerHTML='<div class="result correct">Correct!</div>';renderProgress();setTimeout(()=>{cur++;renderQ();},1200);}
+else{document.getElementById('fb').innerHTML='<div class="result wrong">Try again!</div>';setTimeout(()=>{document.getElementById('fb').innerHTML='';},1200);}
+}
+
+function celebrate(){const c=document.getElementById('confettiBox');const colors=['#8BC34A','#FF9800','#2196F3','#F44336','#FFEB3B'];for(let i=0;i<50;i++){const d=document.createElement('div');d.style.cssText='position:absolute;width:10px;height:10px;background:'+colors[Math.floor(Math.random()*5)]+';left:'+Math.random()*100+'%;top:-10px;animation:cfall '+(2+Math.random()*3)+'s linear '+Math.random()*2+'s forwards';c.appendChild(d);}
+const s=document.createElement('style');s.textContent='@keyframes cfall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';document.head.appendChild(s);}
+
+renderProgress();
+</script></body></html>`;
+
+// ================================================================
+//  SOFIA — Reading / Encanto
+// ================================================================
+const SOFIA_READING_TEXT = `**Mirabel's Fraction Adventure!**
+
+Hola, Sofia! Mirabel from Encanto needs your help with some magic fraction problems!
+
+In the Casita, the Madrigal family is preparing for a big celebration. They need to combine different amounts of ingredients. But the ingredients come in different-sized portions — that means fractions with different denominators!
+
+**How to Add Fractions with Different Denominators:**
+
+When the bottom numbers (denominators) are different, we need to find a common size first. It's like when Luisa needs to stack blocks of different sizes — she arranges them so they all fit together!
+
+**Step 1:** Look at the denominators (bottom numbers)
+**Step 2:** Find the Least Common Denominator (LCD) — the smallest number both denominators divide into
+**Step 3:** Convert each fraction to use the LCD
+**Step 4:** Add the numerators (top numbers)
+**Step 5:** Keep the denominator the same
+
+**Example: 4/5 + 1/3**
+• LCD of 5 and 3 = 15
+• 4/5 = 12/15 (multiply top and bottom by 3)
+• 1/3 = 5/15 (multiply top and bottom by 5)
+• 12/15 + 5/15 = **17/15** (or 1 and 2/15)
+
+Mirabel says: "We don't talk about different denominators... we just find the common one!" Now try the problems below!`;
+
+// ────────────────────────────────────────────────────────────────
+// ASSEMBLED EXPORTS
+// ────────────────────────────────────────────────────────────────
 export const DEMO_ADAPTED_LESSONS = {
-  // ─── AISHA (Visual / SpongeBob) ─────────────────────────────────────
+  // NOTE: Jamie removed from demo per user request
+
   aisha: {
     adaptedText: "SpongeBob is making Krabby Patty fractions at the Krusty Krab! Look at the pictures to see how fractions combine!",
     character: 'SpongeBob',
     mode: 'Visual',
-    cloudinaryPrompt: 'SpongeBob SquarePants in the Krusty Krab kitchen dividing Krabby Patties into fraction pieces',
-    imageUrl: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-    imageUrls: {
-      neutral: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-      happy: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189932/spectra/spongebob/krabby-patty.png',
-      supportive: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/mrkrabs.png',
-    },
-    characterImages: [
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189929/spectra/spongebob/mrkrabs-money.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189932/spectra/spongebob/krabby-patty.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/mrkrabs.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189930/spectra/spongebob/patricks-rock.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189933/spectra/spongebob/patrick.png',
-    ],
-    questions: [
-      {
-        id: 'dq1', text: '4/5 + 1/3 = ?',
-        options: ['17/15', '5/8', '12/15', '7/15'],
-        correctIndex: 0,
-        hint: 'Find the common denominator (15). 4/5 = 12/15, 1/3 = 5/15. Add: 12+5 = 17/15',
-      },
-      {
-        id: 'dq2', text: '2/7 + 3/4 = ?',
-        options: ['5/11', '29/28', '23/28', '8/28'],
-        correctIndex: 1,
-        hint: 'Common denominator is 28. 2/7 = 8/28, 3/4 = 21/28. Add: 8+21 = 29/28',
-      },
-      {
-        id: 'dq3', text: '1/2 + 2/3 = ?',
-        options: ['3/5', '5/6', '7/6', '4/6'],
-        correctIndex: 2,
-        hint: 'Common denominator is 6. 1/2 = 3/6, 2/3 = 4/6. Add: 3+4 = 7/6',
-      },
-      {
-        id: 'dq4', text: '3/8 + 1/4 = ?',
-        options: ['4/12', '5/8', '4/8', '7/8'],
-        correctIndex: 1,
-        hint: 'Common denominator is 8. 1/4 = 2/8. Add: 3+2 = 5/8',
-      },
-      {
-        id: 'dq5', text: '5/6 + 1/2 = ?',
-        options: ['6/8', '4/3', '7/6', '8/6'],
-        correctIndex: 2,
-        hint: 'Common denominator is 6. 1/2 = 3/6. Add: 5+3 = 8/6... wait, that is 8/6! But simplified: 4/3',
-      },
-    ],
-    interactiveHtml: `<!DOCTYPE html>
-<html><head><style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Comic Sans MS', cursive; background: linear-gradient(135deg, #FFE135 0%, #87CEEB 100%); min-height: 100vh; padding: 20px; }
-.container { max-width: 800px; margin: 0 auto; }
-.header { text-align: center; margin-bottom: 20px; }
-.header h1 { color: #8B4513; font-size: 28px; text-shadow: 2px 2px 0 #FFE135; }
-.character-area { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.9); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 3px solid #FFE135; }
-.character-area img { width: 120px; height: 120px; object-fit: contain; border-radius: 50%; background: #87CEEB; }
-.speech-bubble { background: white; border-radius: 20px; padding: 16px; position: relative; border: 2px solid #FFE135; flex: 1; }
-.speech-bubble::before { content: ''; position: absolute; left: -12px; top: 20px; border: 6px solid transparent; border-right-color: #FFE135; }
-.fraction-visual { display: flex; gap: 20px; justify-content: center; align-items: center; margin: 20px 0; }
-.fraction-bar { width: 200px; height: 40px; border-radius: 8px; overflow: hidden; display: flex; border: 2px solid #333; }
-.fraction-bar .filled { background: #FF6B35; }
-.fraction-bar .empty { background: #f0f0f0; }
-.problem-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 3px solid #87CEEB; }
-.problem-card h3 { color: #8B4513; margin-bottom: 12px; }
-.step { padding: 8px 12px; margin: 4px 0; background: #FFF8E7; border-radius: 8px; font-size: 14px; }
-.step strong { color: #FF6B35; }
-</style></head><body>
-<div class="container">
-  <div class="header"><h1>SpongeBob's Fraction Kitchen!</h1></div>
-  <div class="character-area">
-    <img id="character-image" src="https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png" alt="SpongeBob" style="border-radius:50%;background:#87CEEB" />
-    <div class="speech-bubble">
-      <strong>SpongeBob says:</strong> "I'm ready! I'm ready! Let's learn about adding fractions by cutting Krabby Patties into equal pieces!"
-    </div>
-  </div>
-  <div class="problem-card">
-    <h3>How to Add Fractions</h3>
-    <div class="step"><strong>Step 1:</strong> Look at the bottom numbers (denominators)</div>
-    <div class="step"><strong>Step 2:</strong> Find a common denominator</div>
-    <div class="step"><strong>Step 3:</strong> Convert each fraction</div>
-    <div class="step"><strong>Step 4:</strong> Add the top numbers (numerators)</div>
-    <div class="step"><strong>Step 5:</strong> Keep the bottom number the same!</div>
-  </div>
-  <div class="problem-card">
-    <h3>Example: 4/5 + 1/3</h3>
-    <div class="fraction-visual">
-      <div><div class="fraction-bar"><div class="filled" style="width:80%"></div><div class="empty" style="width:20%"></div></div><div style="text-align:center;margin-top:4px">4/5</div></div>
-      <span style="font-size:24px;font-weight:bold">+</span>
-      <div><div class="fraction-bar"><div class="filled" style="width:33%"></div><div class="empty" style="width:67%"></div></div><div style="text-align:center;margin-top:4px">1/3</div></div>
-      <span style="font-size:24px;font-weight:bold">=</span>
-      <div><div class="fraction-bar"><div class="filled" style="width:100%"></div></div><div style="text-align:center;margin-top:4px">17/15</div></div>
-    </div>
-    <div class="step">Common denominator: 15</div>
-    <div class="step">4/5 = 12/15 and 1/3 = 5/15</div>
-    <div class="step"><strong>12/15 + 5/15 = 17/15</strong></div>
-  </div>
-</div>
-</body></html>`,
+    cloudinaryPrompt: 'SpongeBob counting Krabby Patties to learn fractions',
+    imageUrl: SB,
+    imageUrls: { neutral: SB, happy: KRABBY, supportive: KRABS },
+    characterImages: [SB, KRABS_MONEY, KRABBY, KRABS, ROCK, PATRICK],
+    questions: FRACTION_QUESTIONS,
+    interactiveHtml: AISHA_VISUAL_HTML,
     elevenLabsScript: '',
     chatContext: 'SpongeBob-themed fraction addition help for visual learner',
   },
 
-  // ─── JAMIE (Visual / Bluey) ─────────────────────────────────────
-  jamie: {
-    adaptedText: "Bluey and Bingo are sharing treats! Help them figure out fractions by looking at the pictures!",
-    character: 'Bluey',
-    mode: 'Visual',
-    cloudinaryPrompt: 'Bluey the cartoon dog sharing treats equally with Bingo showing fraction concepts',
-    imageUrl: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-    imageUrls: {
-      neutral: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-      happy: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189932/spectra/spongebob/krabby-patty.png',
-      supportive: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189933/spectra/spongebob/patrick.png',
-    },
-    characterImages: [
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189932/spectra/spongebob/krabby-patty.png',
-      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189933/spectra/spongebob/patrick.png',
-    ],
-    questions: [
-      {
-        id: 'dq1', text: '4/5 + 1/3 = ?',
-        options: ['17/15', '5/8', '12/15', '7/15'],
-        correctIndex: 0,
-        hint: 'Bluey says: Find the common denominator! 5 and 3 both go into 15.',
-      },
-      {
-        id: 'dq2', text: '2/7 + 3/4 = ?',
-        options: ['5/11', '29/28', '23/28', '8/28'],
-        correctIndex: 1,
-        hint: 'Bingo says: 7 and 4 both go into 28!',
-      },
-      {
-        id: 'dq3', text: '1/2 + 2/3 = ?',
-        options: ['3/5', '5/6', '7/6', '4/6'],
-        correctIndex: 2,
-        hint: 'Common denominator is 6. 3/6 + 4/6 = 7/6!',
-      },
-      {
-        id: 'dq4', text: '3/8 + 1/4 = ?',
-        options: ['4/12', '5/8', '4/8', '7/8'],
-        correctIndex: 1,
-        hint: '1/4 is the same as 2/8. Then 3/8 + 2/8 = 5/8!',
-      },
-      {
-        id: 'dq5', text: '5/6 + 1/2 = ?',
-        options: ['6/8', '4/3', '7/6', '8/6'],
-        correctIndex: 2,
-        hint: '1/2 is the same as 3/6. Then 5/6 + 3/6 = 8/6!',
-      },
-    ],
-    interactiveHtml: `<!DOCTYPE html>
-<html><head><style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Comic Sans MS', cursive; background: linear-gradient(135deg, #5B9BD5 0%, #A8D8EA 50%, #FFD93D 100%); min-height: 100vh; padding: 20px; }
-.container { max-width: 800px; margin: 0 auto; }
-.header { text-align: center; background: rgba(255,255,255,0.95); border-radius: 24px; padding: 20px; margin-bottom: 20px; border: 4px solid #5B9BD5; }
-.header h1 { color: #2C5F8A; font-size: 28px; }
-.character-area { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.9); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 3px solid #5B9BD5; }
-.character-area img { width: 120px; height: 120px; object-fit: contain; }
-.speech { background: #E8F4FD; border-radius: 20px; padding: 16px; flex: 1; border: 2px solid #5B9BD5; font-size: 15px; }
-.card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 3px solid #A8D8EA; }
-.card h3 { color: #2C5F8A; margin-bottom: 12px; }
-.pie-container { display: flex; gap: 24px; justify-content: center; margin: 16px 0; }
-.pie { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #333; position: relative; overflow: hidden; }
-.step { padding: 8px 12px; margin: 4px 0; background: #E8F4FD; border-radius: 8px; font-size: 14px; }
-</style></head><body>
-<div class="container">
-  <div class="header"><h1>Bluey's Fraction Fun!</h1></div>
-  <div class="character-area">
-    <img id="character-image" src="https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189928/spectra/spongebob/spongebob-happy.png" alt="SpongeBob" style="border-radius:12px" />
-    <div class="speech"><strong>Bluey says:</strong> "Wackadoo! Let's learn fractions by sharing treats with Bingo! When we share, we use fractions!"</div>
-  </div>
-  <div class="card">
-    <h3>Sharing Treats Equally</h3>
-    <div class="step">When Bluey and Bingo share treats, they need to cut them into equal pieces.</div>
-    <div class="step">The <strong>bottom number</strong> tells us how many pieces total.</div>
-    <div class="step">The <strong>top number</strong> tells us how many pieces we have.</div>
-    <div class="step">To add fractions, make the pieces the <strong>same size</strong> first!</div>
-  </div>
-  <div class="card">
-    <h3>Example: 4/5 + 1/3</h3>
-    <div class="step">Both fractions need pieces of the same size (common denominator = 15)</div>
-    <div class="step">4/5 becomes 12/15 (multiply top and bottom by 3)</div>
-    <div class="step">1/3 becomes 5/15 (multiply top and bottom by 5)</div>
-    <div class="step"><strong>12/15 + 5/15 = 17/15!</strong> That's more than one whole treat!</div>
-  </div>
-</div>
-</body></html>`,
-    elevenLabsScript: '',
-    chatContext: 'Bluey-themed fraction addition help for visual learner',
-  },
-
-  // ─── MAYA (Auditory / Paw Patrol) ─────────────────────────────────
   maya: {
     adaptedText: "Listen to Ryder explain how fractions work! The Paw Patrol pups will help you understand!",
     character: 'Paw Patrol',
@@ -254,44 +574,13 @@ So four-fifths becomes twelve-fifteenths, because we multiply both top and botto
 
 Now we can add them: twelve-fifteenths plus five-fifteenths equals seventeen-fifteenths! That's more than one whole, which means Chase and Marshall have more than enough treats to share!
 
-Let's try more problems together. Remember, whenever the bottom numbers are different, find that common denominator first. You've got this, Maya! No job is too big, no pup is too small!`,
-    chatContext: 'Paw Patrol Ryder-themed fraction tutoring for auditory learner. Use encouraging language and sound references.',
-    questions: [
-      {
-        id: 'dq1', text: '4/5 + 1/3 = ?',
-        options: ['17/15', '5/8', '12/15', '7/15'],
-        correctIndex: 0,
-        hint: 'Ryder says: Remember, find the common denominator first! 5 and 3 both go into 15.',
-      },
-      {
-        id: 'dq2', text: '2/7 + 3/4 = ?',
-        options: ['5/11', '29/28', '23/28', '8/28'],
-        correctIndex: 1,
-        hint: 'Chase says: 7 times 4 is 28. That is your common denominator!',
-      },
-      {
-        id: 'dq3', text: '1/2 + 2/3 = ?',
-        options: ['3/5', '5/6', '7/6', '4/6'],
-        correctIndex: 2,
-        hint: 'Marshall says: 2 and 3 both go into 6!',
-      },
-      {
-        id: 'dq4', text: '3/8 + 1/4 = ?',
-        options: ['4/12', '5/8', '4/8', '7/8'],
-        correctIndex: 1,
-        hint: 'Skye says: 4 goes into 8! So 1/4 = 2/8!',
-      },
-      {
-        id: 'dq5', text: '5/6 + 1/2 = ?',
-        options: ['6/8', '4/3', '7/6', '8/6'],
-        correctIndex: 2,
-        hint: 'Rubble says: 1/2 is the same as 3/6!',
-      },
-    ],
-    interactiveHtml: '',
+No job is too big, no pup is too small! You've got this, Maya!`,
+    chatContext: 'Paw Patrol Ryder-themed fraction tutoring for auditory learner. Use encouraging language.',
+    questions: FRACTION_QUESTIONS,
+    interactiveHtml: MAYA_AUDITORY_HTML,
+    audioUrl: '', // Would be generated by ElevenLabs
   },
 
-  // ─── ELI (Kinesthetic / Minecraft Steve) ─────────────────────────────
   eli: {
     adaptedText: "Steve is building fraction blocks in Minecraft! Click, drag, and interact to learn fractions!",
     character: 'Minecraft Steve',
@@ -299,232 +588,29 @@ Let's try more problems together. Remember, whenever the bottom numbers are diff
     cloudinaryPrompt: '',
     elevenLabsScript: '',
     chatContext: 'Minecraft-themed fraction help for kinesthetic learner. Use building/crafting metaphors.',
-    questions: [
-      {
-        id: 'dq1', text: '4/5 + 1/3 = ?',
-        options: ['17/15', '5/8', '12/15', '7/15'],
-        correctIndex: 0,
-        hint: 'Steve says: Build 12 blocks out of 15 for the first fraction, then add 5 more!',
-      },
-      {
-        id: 'dq2', text: '2/7 + 3/4 = ?',
-        options: ['5/11', '29/28', '23/28', '8/28'],
-        correctIndex: 1,
-        hint: 'Craft a 28-block wall. Fill 8 blocks for 2/7 and 21 blocks for 3/4!',
-      },
-      {
-        id: 'dq3', text: '1/2 + 2/3 = ?',
-        options: ['3/5', '5/6', '7/6', '4/6'],
-        correctIndex: 2,
-        hint: 'Build a row of 6 blocks. Fill 3 for 1/2 and 4 for 2/3!',
-      },
-      {
-        id: 'dq4', text: '3/8 + 1/4 = ?',
-        options: ['4/12', '5/8', '4/8', '7/8'],
-        correctIndex: 1,
-        hint: '1/4 is the same as 2/8 blocks. So 3+2 = 5 out of 8!',
-      },
-      {
-        id: 'dq5', text: '5/6 + 1/2 = ?',
-        options: ['6/8', '4/3', '7/6', '8/6'],
-        correctIndex: 2,
-        hint: '1/2 = 3/6, so 5+3 = 8... wait, that gives 8/6!',
-      },
-    ],
-    // Claude would normally generate this, using a pre-built version for demo
-    interactiveHtml: `<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Steve's Fraction Workshop</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Courier New',monospace;background:linear-gradient(180deg,#87CEEB 0%,#87CEEB 60%,#228B22 60%,#228B22 100%);min-height:100vh;color:#333}
-.container{max-width:900px;margin:0 auto;padding:20px}
-.header{background:#5D4037;border:4px solid #3E2723;padding:16px 24px;text-align:center;margin-bottom:20px;image-rendering:pixelated}
-.header h1{color:#8BC34A;font-size:26px;text-shadow:2px 2px #2E7D32;letter-spacing:2px}
-.progress-bar{width:100%;height:24px;background:#795548;border:3px solid #3E2723;margin:12px 0;position:relative}
-.progress-fill{height:100%;background:#8BC34A;transition:width 0.5s;position:relative}
-.progress-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:4px;background:#689F38}
-.progress-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:white;font-weight:bold;font-size:12px;z-index:1}
-.tabs{display:flex;gap:4px;margin-bottom:16px}
-.tab{flex:1;padding:12px;background:#795548;color:white;border:3px solid #3E2723;cursor:pointer;text-align:center;font-weight:bold;font-family:'Courier New',monospace;font-size:14px}
-.tab.active{background:#8BC34A;color:#1B5E20}
-.tab:hover{opacity:0.9}
-.panel{background:rgba(255,255,255,0.95);border:4px solid #5D4037;padding:24px;min-height:400px}
-.speech-bubble{background:#E8F5E9;border:3px solid #4CAF50;border-radius:0;padding:16px;margin-bottom:20px;position:relative}
-.speech-bubble::before{content:'Steve:';font-weight:bold;color:#2E7D32;display:block;margin-bottom:4px}
-.fraction-display{display:flex;align-items:center;justify-content:center;gap:24px;margin:24px 0;flex-wrap:wrap}
-.block-grid{display:grid;gap:3px;padding:4px;background:#5D4037;border:3px solid #3E2723}
-.block{width:36px;height:36px;border:2px solid rgba(0,0,0,0.2);transition:all 0.3s}
-.block.filled{background:#8BC34A;box-shadow:inset -2px -2px 0 #689F38,inset 2px 2px 0 #AED581}
-.block.empty{background:#BCAAA4;box-shadow:inset -2px -2px 0 #8D6E63,inset 2px 2px 0 #D7CCC8}
-.block.highlight{animation:pulse 0.6s ease-in-out infinite alternate}
-@keyframes pulse{0%{transform:scale(1)}100%{transform:scale(1.1);box-shadow:0 0 12px #FFEB3B}}
-.operator{font-size:36px;font-weight:bold;color:#5D4037}
-.slider-area{margin:20px 0;text-align:center}
-.slider-area input[type=range]{width:80%;height:24px;-webkit-appearance:none;background:#795548;border:3px solid #3E2723;outline:none}
-.slider-area input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;background:#8BC34A;border:3px solid #2E7D32;cursor:pointer}
-.slider-label{font-size:20px;font-weight:bold;color:#5D4037;margin-top:8px}
-.btn{padding:12px 24px;font-family:'Courier New',monospace;font-size:16px;font-weight:bold;border:3px solid #3E2723;cursor:pointer;margin:4px}
-.btn-primary{background:#8BC34A;color:#1B5E20}.btn-primary:hover{background:#AED581}
-.btn-check{background:#2196F3;color:white}.btn-check:hover{background:#64B5F6}
-.btn-next{background:#FF9800;color:white}.btn-next:hover{background:#FFB74D}
-.result{padding:16px;margin:12px 0;font-weight:bold;text-align:center;font-size:18px;border:3px solid}
-.result.correct{background:#E8F5E9;border-color:#4CAF50;color:#2E7D32}
-.result.wrong{background:#FFEBEE;border-color:#F44336;color:#C62828;animation:shake 0.4s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
-.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
-.confetti{position:absolute;width:10px;height:10px;animation:fall linear forwards}
-@keyframes fall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
-.score{background:#5D4037;color:#8BC34A;padding:8px 16px;display:inline-block;font-weight:bold;border:3px solid #3E2723;margin-bottom:16px}
-</style></head><body>
-<div class="container">
-<div class="header">
-<h1>Steve's Fraction Workshop</h1>
-<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div><div class="progress-text" id="progressText">0 / 5</div></div>
-</div>
-<div class="tabs">
-<div class="tab active" onclick="showTab('learn')" id="tabLearn">Learn</div>
-<div class="tab" onclick="showTab('explore')" id="tabExplore">Explore</div>
-<div class="tab" onclick="showTab('practice')" id="tabPractice">Practice</div>
-</div>
-<div class="panel" id="panelLearn">
-<div class="speech-bubble">Welcome to my fraction workshop! In Minecraft, everything is made of blocks. Fractions work the same way - they tell us how many blocks out of the total are filled in!</div>
-<h3 style="color:#5D4037;margin:16px 0 12px">Adding Fractions: Step by Step</h3>
-<div class="speech-bubble">Let's add 4/5 + 1/3. First, we need blocks of the same size. Both 5 and 3 fit into 15!</div>
-<div class="fraction-display">
-<div>
-<div class="block-grid" style="grid-template-columns:repeat(5,1fr)"><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block empty"></div></div>
-<div style="text-align:center;margin-top:8px;font-weight:bold">4/5</div></div>
-<div class="operator">+</div>
-<div>
-<div class="block-grid" style="grid-template-columns:repeat(3,1fr)"><div class="block filled"></div><div class="block empty"></div><div class="block empty"></div></div>
-<div style="text-align:center;margin-top:8px;font-weight:bold">1/3</div></div>
-</div>
-<div class="speech-bubble">Now convert to fifteenths: 4/5 = 12/15 and 1/3 = 5/15</div>
-<div class="fraction-display">
-<div>
-<div class="block-grid" style="grid-template-columns:repeat(5,1fr)"><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div></div>
-<div style="text-align:center;margin-top:8px;font-weight:bold">12/15</div></div>
-<div class="operator">+</div>
-<div>
-<div class="block-grid" style="grid-template-columns:repeat(5,1fr)"><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div><div class="block empty"></div></div>
-<div style="text-align:center;margin-top:8px;font-weight:bold">5/15</div></div>
-<div class="operator">=</div>
-<div>
-<div class="block-grid" style="grid-template-columns:repeat(5,1fr)"><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div><div class="block filled"></div></div>
-<div style="text-align:center;margin-top:8px;font-weight:bold;color:#2E7D32">17/15!</div></div>
-</div>
-<button class="btn btn-next" onclick="showTab('explore')">Next: Try the Slider! &rarr;</button>
-</div>
-<div class="panel" id="panelExplore" style="display:none">
-<div class="speech-bubble">Use the sliders to build your own fractions! Watch the blocks fill in as you change the numbers.</div>
-<div class="slider-area">
-<label>Numerator: <span id="numVal">1</span></label><br>
-<input type="range" min="0" max="15" value="1" oninput="updateSlider()"><br><br>
-<label>Denominator: <span id="denVal">4</span></label><br>
-<input type="range" min="1" max="15" value="4" oninput="updateSlider()">
-</div>
-<div class="slider-label" id="fractionLabel">1/4</div>
-<div id="sliderBlocks" style="display:flex;justify-content:center;margin:16px 0"></div>
-<button class="btn btn-next" onclick="showTab('practice')">Ready to Practice! &rarr;</button>
-</div>
-<div class="panel" id="panelPractice" style="display:none">
-<div class="score">Score: <span id="score">0</span> / 5</div>
-<div id="practiceArea"></div>
-<div id="confettiContainer" class="confetti-container"></div>
-</div>
-</div>
-<script>
-const problems=[{q:'4/5 + 1/3',a:'17/15',opts:['17/15','5/8','12/15','7/15']},{q:'2/7 + 3/4',a:'29/28',opts:['5/11','29/28','23/28','8/28']},{q:'1/2 + 2/3',a:'7/6',opts:['3/5','5/6','7/6','4/6']},{q:'3/8 + 1/4',a:'5/8',opts:['4/12','5/8','4/8','7/8']},{q:'5/6 + 1/2',a:'8/6',opts:['6/8','4/3','7/6','8/6']}];
-let current=0,score=0,answered=new Set();
-function showTab(t){document.querySelectorAll('.panel').forEach(p=>p.style.display='none');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)).style.display='block';document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');if(t==='practice'&&!answered.size)renderProblem();}
-function updateSlider(){const s=document.querySelectorAll('input[type=range]');const n=parseInt(s[0].value),d=parseInt(s[1].value);document.getElementById('numVal').textContent=n;document.getElementById('denVal').textContent=d;document.getElementById('fractionLabel').textContent=n+'/'+d;let html='<div class="block-grid" style="grid-template-columns:repeat('+Math.min(d,10)+',1fr)">';for(let i=0;i<d;i++){html+='<div class="block '+(i<n?'filled':'empty')+'"></div>';}html+='</div>';document.getElementById('sliderBlocks').innerHTML=html;}
-function renderProblem(){if(current>=problems.length){document.getElementById('practiceArea').innerHTML='<div class="result correct" style="font-size:24px">All Done! Score: '+score+'/5</div>';celebrate();return;}
-const p=problems[current];let html='<div class="speech-bubble">Problem '+(current+1)+': What is '+p.q+'?</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin:16px 0">';
-p.opts.forEach((o,i)=>{html+='<button class="btn btn-check" onclick="checkAnswer('+i+',\''+o+'\',\''+p.a+'\')">'+o+'</button>';});
-html+='</div><div id="feedback"></div>';document.getElementById('practiceArea').innerHTML=html;}
-function checkAnswer(i,selected,correct){if(answered.has(current))return;const ok=selected===correct;document.getElementById('feedback').innerHTML='<div class="result '+(ok?'correct':'wrong')+'">'+(ok?'Correct! Great building, Steve!':'Not quite... Try thinking about the common denominator!')+'</div>';
-if(ok){score++;answered.add(current);document.getElementById('score').textContent=score;const pct=((answered.size)/5*100);document.getElementById('progressFill').style.width=pct+'%';document.getElementById('progressText').textContent=answered.size+' / 5';
-setTimeout(()=>{current++;renderProblem();},1500);}else{setTimeout(()=>{document.getElementById('feedback').innerHTML='';},2000);}}
-function celebrate(){const c=document.getElementById('confettiContainer');const colors=['#8BC34A','#FF9800','#2196F3','#F44336','#FFEB3B','#9C27B0'];for(let i=0;i<60;i++){const d=document.createElement('div');d.className='confetti';d.style.left=Math.random()*100+'%';d.style.background=colors[Math.floor(Math.random()*colors.length)];d.style.animationDuration=(2+Math.random()*3)+'s';d.style.animationDelay=Math.random()*2+'s';c.appendChild(d);}}
-updateSlider();
-</script></body></html>`,
+    questions: FRACTION_QUESTIONS,
+    interactiveHtml: ELI_KINESTHETIC_HTML,
   },
 
-  // ─── SOFIA (Reading / Encanto) ─────────────────────────────────────
   sofia: {
-    adaptedText: `Mirabel's Fraction Adventure!
-
-Hola, Sofia! Mirabel from Encanto needs your help with some magic fraction problems!
-
-In the Casita, the Madrigal family is preparing for a big celebration. They need to combine different amounts of ingredients. But the ingredients come in different-sized portions - that means fractions with different denominators!
-
-**How to Add Fractions with Different Denominators:**
-
-When the bottom numbers (denominators) are different, we need to find a common size first. It's like when Luisa needs to stack blocks of different sizes - she arranges them so they all fit together!
-
-**Step 1:** Look at the denominators (bottom numbers)
-**Step 2:** Find the Least Common Denominator (LCD) - the smallest number both denominators divide into
-**Step 3:** Convert each fraction to use the LCD
-**Step 4:** Add the numerators (top numbers)
-**Step 5:** Keep the denominator the same
-
-**Example: 4/5 + 1/3**
-- LCD of 5 and 3 = 15
-- 4/5 = 12/15 (multiply top and bottom by 3)
-- 1/3 = 5/15 (multiply top and bottom by 5)
-- 12/15 + 5/15 = **17/15** (or 1 and 2/15)
-
-Mirabel says: "We don't talk about different denominators... we just find the common one!" Now try the problems below!`,
+    adaptedText: SOFIA_READING_TEXT,
     character: 'Mirabel (Encanto)',
     mode: 'Reading',
     cloudinaryPrompt: '',
     elevenLabsScript: '',
-    chatContext: `You are a friendly math tutor helping Sofia learn about adding fractions. Sofia is a Reading learner who loves Encanto and Mirabel. Use Encanto references and metaphors. Explain step by step and be encouraging. Sofia's frustration triggers include ambiguous instructions, so always be clear and specific.`,
-    questions: [
-      {
-        id: 'dq1', text: '4/5 + 1/3 = ?',
-        options: ['17/15', '5/8', '12/15', '7/15'],
-        correctIndex: 0,
-        hint: 'Mirabel says: Find the LCD! 5 and 3 both go into 15. Then convert: 12/15 + 5/15 = ?',
-      },
-      {
-        id: 'dq2', text: '2/7 + 3/4 = ?',
-        options: ['5/11', '29/28', '23/28', '8/28'],
-        correctIndex: 1,
-        hint: 'Luisa says: Build a stack of 28! 2/7 = 8/28 and 3/4 = 21/28.',
-      },
-      {
-        id: 'dq3', text: '1/2 + 2/3 = ?',
-        options: ['3/5', '5/6', '7/6', '4/6'],
-        correctIndex: 2,
-        hint: 'Isabela says: The LCD of 2 and 3 is 6. Convert: 3/6 + 4/6 = 7/6!',
-      },
-      {
-        id: 'dq4', text: '3/8 + 1/4 = ?',
-        options: ['4/12', '5/8', '4/8', '7/8'],
-        correctIndex: 1,
-        hint: 'Bruno says: I see the future... 1/4 = 2/8, so 3/8 + 2/8 = 5/8!',
-      },
-      {
-        id: 'dq5', text: '5/6 + 1/2 = ?',
-        options: ['6/8', '4/3', '7/6', '8/6'],
-        correctIndex: 2,
-        hint: 'The Casita rumbles with excitement! 1/2 = 3/6, so 5/6 + 3/6 = 8/6!',
-      },
-    ],
+    chatContext: 'You are a friendly math tutor helping Sofia learn fractions. She loves Encanto and Mirabel. Use Encanto references. Be clear and specific — ambiguous instructions frustrate her.',
+    questions: FRACTION_QUESTIONS,
     interactiveHtml: '',
   },
 };
 
-// ─── Frustration demo scenarios ─────────────────────────────────────
-// Simulated events for the demo showing frustration detection → auto-reframe
+// ─── Frustration demo scenarios ─────────────────────────────────
 export const DEMO_FRUSTRATION_EVENTS = [
   {
     id: 'frust-1',
     studentId: 'eli',
     studentName: 'Eli R.',
-    timestamp: new Date(Date.now() - 300000).toISOString(), // 5 min ago
+    timestamp: new Date(Date.now() - 300000).toISOString(),
     trigger: '3 consecutive wrong answers on Q3',
     triggerType: 'wrong_attempts',
     frustrationScore: 82,
@@ -533,13 +619,13 @@ export const DEMO_FRUSTRATION_EVENTS = [
     afterState: 'Regenerated with step-by-step guided walkthrough + simplified blocks',
     status: 'auto-reframed',
     severity: 'high',
-    resolution: 'Auto-regenerated interactive lesson with smaller steps. Student completed after reframe.',
+    resolution: 'Auto-regenerated interactive lesson with smaller steps.',
   },
   {
     id: 'frust-2',
     studentId: 'maya',
     studentName: 'Maya K.',
-    timestamp: new Date(Date.now() - 600000).toISOString(), // 10 min ago
+    timestamp: new Date(Date.now() - 600000).toISOString(),
     trigger: 'Rapid clicking detected (5 clicks in 4 seconds)',
     triggerType: 'rapid_clicks',
     frustrationScore: 58,
@@ -548,47 +634,46 @@ export const DEMO_FRUSTRATION_EVENTS = [
     afterState: 'Re-read narration at slower pace with additional hints',
     status: 'auto-reframed',
     severity: 'moderate',
-    resolution: 'Audio narration replayed at 0.8x speed with extra step breakdown.',
+    resolution: 'Audio narration replayed at 0.8x speed.',
   },
   {
     id: 'frust-3',
     studentId: 'eli',
     studentName: 'Eli R.',
-    timestamp: new Date(Date.now() - 180000).toISOString(), // 3 min ago
+    timestamp: new Date(Date.now() - 180000).toISOString(),
     trigger: 'Typed "this is too hard" in chat',
     triggerType: 'keyword',
     frustrationScore: 90,
     question: 'Q4: 3/8 + 1/4 = ?',
     beforeState: 'Standard kinesthetic interaction',
-    afterState: 'Simplified to 2-step problem with visual hints + encouragement message',
+    afterState: 'Simplified to 2-step problem with visual hints + encouragement',
     status: 'teacher-notified',
     severity: 'high',
-    resolution: 'Teacher notification sent. Break prompt shown to student.',
+    resolution: 'Teacher notification sent. Break prompt shown.',
   },
 ];
 
-// ─── Approved assignment history ─────────────────────────────────────
 export const DEMO_APPROVED_HISTORY = [
   {
     id: 'approved-fractions-1',
     assignmentTitle: 'Adding Fractions Worksheet',
     subject: 'Math',
-    approvedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+    approvedAt: new Date(Date.now() - 3600000).toISOString(),
     approvedBy: 'alysonga@usc.edu',
-    studentCount: 5,
-    students: ['jamie', 'maya', 'eli', 'sofia', 'aisha'],
+    studentCount: 4,
+    students: ['maya', 'eli', 'sofia', 'aisha'],
     frustrationEvents: 3,
-    avgScore: null, // not yet completed
+    avgScore: null,
     status: 'active',
   },
   {
     id: 'approved-addition-1',
     assignmentTitle: 'Addition — Krabby Patty counting',
     subject: 'Math',
-    approvedAt: new Date(Date.now() - 86400000).toISOString(), // yesterday
+    approvedAt: new Date(Date.now() - 86400000).toISOString(),
     approvedBy: 'alysonga@usc.edu',
-    studentCount: 5,
-    students: ['jamie', 'maya', 'eli', 'sofia', 'aisha'],
+    studentCount: 4,
+    students: ['maya', 'eli', 'sofia', 'aisha'],
     frustrationEvents: 6,
     avgScore: 64,
     status: 'completed',
