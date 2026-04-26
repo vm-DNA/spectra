@@ -496,53 +496,231 @@ export const DEMO_APPROVED_HISTORY = [
 
 // ─── PRE-GENERATED REFRAME CONTENT ─────────────────────────────────────
 // Loads instantly when a student gets a question wrong 3+ times.
-// Keyed by question text.
-export const DEMO_REFRAMES = {
+// Keyed by studentId → question text. Each student gets reframes
+// tailored to their character and learning style.
+// ────────────────────────────────────────────────────────────────────────
+
+// ── AISHA — Visual / SpongeBob ──────────────────────────────────────────
+const AISHA_REFRAMES = {
   '4/5 + 1/3': {
     steps: [
-      { label: 'Step 1 — Same-size pieces', content: 'Imagine SpongeBob cuts a pizza into 15 equal slices. That\'s our common denominator!' },
-      { label: 'Step 2 — Convert', content: '4/5 means 12 slices out of 15. And 1/3 means 5 slices out of 15.' },
-      { label: 'Step 3 — Add the slices', content: '12 slices + 5 slices = 17 slices. So 4/5 + 1/3 = 17/15!' },
+      { label: 'Step 1 — Picture two trays', content: 'Imagine SpongeBob has two Krabby Patty trays. The first tray is cut into 5 equal slots and 4 are filled. The second tray has 3 slots with 1 filled.' },
+      { label: 'Step 2 — Make the slots the same size', content: 'SpongeBob re-cuts BOTH trays so each one has 15 equal slots. Now 4/5 becomes 12 filled slots (12/15) and 1/3 becomes 5 filled slots (5/15).' },
+      { label: 'Step 3 — Combine the trays', content: 'Slide all the filled slots together: 12 + 5 = 17 filled slots out of 15. That\'s 17/15 — more than one full tray!' },
+      { label: 'Step 4 — Check your picture', content: 'Count the filled slots on your combined tray: you should see 15 full + 2 extra = 1 whole tray and 2/15 left over.' },
     ],
-    simplifiedQuestion: { text: 'If SpongeBob has 12 pizza slices and Patrick brings 5 more, how many slices total?', options: ['15', '17', '7'], correctIndex: 1 },
-    encouragement: 'You\'re doing awesome! Even SpongeBob needed practice with fractions!',
+    simplifiedQuestion: { text: 'SpongeBob\'s tray has 15 slots. 12 are filled, then he adds 5 more patties. How many filled slots is that?', options: ['15/15', '17/15', '12/15'], correctIndex: 1 },
+    encouragement: 'You\'re doing awesome, Aisha! SpongeBob says "I can see you really understand fractions now — keep looking at those pictures!"',
   },
   '2/7 + 3/4': {
     steps: [
-      { label: 'Step 1 — Find the LCD', content: 'Mr. Krabs wants to split things into 28 equal parts — that\'s the smallest number 7 and 4 both fit into.' },
-      { label: 'Step 2 — Convert each fraction', content: '2/7 = 8/28 (multiply by 4), and 3/4 = 21/28 (multiply by 7).' },
-      { label: 'Step 3 — Add', content: '8 + 21 = 29. So 2/7 + 3/4 = 29/28!' },
+      { label: 'Step 1 — Draw two Krabby Patties', content: 'Picture one patty cut into 7 pieces with 2 shaded, and another cut into 4 pieces with 3 shaded. The slices aren\'t the same size!' },
+      { label: 'Step 2 — Re-slice to 28 equal pieces', content: 'Mr. Krabs re-cuts both patties into 28 tiny pieces each. The first patty now has 8 shaded (2 × 4 = 8). The second has 21 shaded (3 × 7 = 21).' },
+      { label: 'Step 3 — Count all shaded pieces', content: '8 shaded + 21 shaded = 29 shaded pieces out of 28. That\'s 29/28 — just a tiny bit more than a whole patty!' },
+      { label: 'Step 4 — Visualize the overflow', content: 'Color in 28 pieces to fill the whole patty, then notice 1 extra piece spills over. 29/28 = 1 and 1/28.' },
     ],
-    simplifiedQuestion: { text: 'Mr. Krabs has 8 coins and finds 21 more. How many coins total?', options: ['28', '29', '13'], correctIndex: 1 },
-    encouragement: 'Mr. Krabs believes in you — and he doesn\'t believe in anything that doesn\'t make money!',
+    simplifiedQuestion: { text: 'Mr. Krabs shades 8 pieces on one patty and 21 on another (both out of 28). How many twentyeighths total?', options: ['28/28', '29/28', '21/28'], correctIndex: 1 },
+    encouragement: 'Mr. Krabs is impressed! He says "That\'s money in the bank, Aisha — you\'ve got an eye for fractions!"',
   },
   '1/2 + 2/3': {
     steps: [
-      { label: 'Step 1 — Common denominator', content: 'Patrick and SpongeBob split a Krabby Patty into 6 pieces — both 2 and 3 go into 6.' },
-      { label: 'Step 2 — Convert', content: '1/2 = 3/6 (3 pieces for Patrick), and 2/3 = 4/6 (4 pieces for SpongeBob).' },
-      { label: 'Step 3 — Add', content: '3 + 4 = 7 pieces. So 1/2 + 2/3 = 7/6!' },
+      { label: 'Step 1 — Two jellyfish nets', content: 'Picture one net split in half (1 part filled) and another split into thirds (2 parts filled). The sections are different sizes, so we can\'t combine yet.' },
+      { label: 'Step 2 — Re-divide into sixths', content: 'Cut each net into 6 equal sections. The half becomes 3/6 (shade 3 sections). The two-thirds becomes 4/6 (shade 4 sections).' },
+      { label: 'Step 3 — Merge the nets', content: 'Lay them together: 3 shaded + 4 shaded = 7 shaded out of 6. That\'s 7/6!' },
+      { label: 'Step 4 — See the whole', content: '6/6 makes one full net, plus 1/6 left over. So 7/6 = 1 and 1/6. Draw it out to see!' },
     ],
-    simplifiedQuestion: { text: 'Patrick eats 3 pieces and SpongeBob eats 4 pieces. How many pieces eaten?', options: ['6', '7', '1'], correctIndex: 1 },
-    encouragement: 'Patrick is so proud of you! He says this is even better than his rock!',
+    simplifiedQuestion: { text: 'SpongeBob shades 3 sixths of a net and then 4 more sixths. How many sixths total?', options: ['6/6', '7/6', '5/6'], correctIndex: 1 },
+    encouragement: 'Patrick says "Is 7/6 more than one? I think so!" — and he\'s right! Great visual thinking, Aisha!',
   },
   '3/8 + 1/4': {
     steps: [
-      { label: 'Step 1 — Lucky break!', content: '4 already fits into 8, so the common denominator is just 8. Easy!' },
-      { label: 'Step 2 — Convert only one', content: '1/4 = 2/8. The 3/8 stays the same.' },
-      { label: 'Step 3 — Add', content: '3 + 2 = 5. So 3/8 + 1/4 = 5/8!' },
+      { label: 'Step 1 — Same-size grid shortcut', content: 'Look — 4 divides evenly into 8! So we only need to re-slice ONE fraction. Draw a patty with 8 slices.' },
+      { label: 'Step 2 — Convert 1/4', content: '1/4 = 2/8. Picture 2 slices out of 8 shaded in a different color from the 3 already shaded.' },
+      { label: 'Step 3 — Count the shaded slices', content: '3 slices + 2 slices = 5 slices out of 8. That\'s 5/8 of the patty!' },
+      { label: 'Step 4 — Verify with the picture', content: 'Your patty should show 5 of 8 slices colored in — a little more than half. Does that look right? You got it!' },
     ],
-    simplifiedQuestion: { text: 'SpongeBob has 3 Krabby Patties and gets 2 more. How many total?', options: ['4', '5', '6'], correctIndex: 1 },
-    encouragement: 'Great job! SpongeBob says "I\'m ready!" and so are you!',
+    simplifiedQuestion: { text: 'A Krabby Patty has 8 slices. 3 are for SpongeBob and 2 for Patrick. How many slices taken?', options: ['4/8', '5/8', '6/8'], correctIndex: 1 },
+    encouragement: 'SpongeBob says "I\'m ready! I\'m ready!" and so are you! Beautiful picture-thinking, Aisha!',
   },
   '5/6 + 1/2': {
     steps: [
-      { label: 'Step 1 — Common denominator', content: '2 goes into 6, so the LCD is 6. Mr. Krabs loves easy math!' },
-      { label: 'Step 2 — Convert', content: '1/2 = 3/6. The 5/6 stays the same.' },
-      { label: 'Step 3 — Add', content: '5 + 3 = 8. So 5/6 + 1/2 = 8/6!' },
+      { label: 'Step 1 — Quick check', content: '2 goes into 6, so the common denominator is already 6. Draw a patty with 6 slices — nice and easy!' },
+      { label: 'Step 2 — Convert 1/2 to sixths', content: '1/2 = 3/6. Shade 3 slices in one color.' },
+      { label: 'Step 3 — Add to the 5 already shaded', content: '5 slices + 3 slices = 8 slices out of 6. That\'s 8/6 — more than a whole patty!' },
+      { label: 'Step 4 — See the mixed number', content: '6/6 = 1 whole, plus 2/6 left over = 1 and 1/3. Color it in to see!' },
     ],
-    simplifiedQuestion: { text: 'If Mr. Krabs has 5 dollar bills and finds 3 more, how many does he have?', options: ['7', '8', '9'], correctIndex: 1 },
-    encouragement: 'Mr. Krabs says every penny counts — and so does every fraction you learn!',
+    simplifiedQuestion: { text: 'A patty has 6 slices. 5 are already filled. SpongeBob adds 3 more. How many sixths total?', options: ['7/6', '8/6', '6/6'], correctIndex: 1 },
+    encouragement: 'Mr. Krabs says "That answer is worth more than a dollar!" — amazing visual work, Aisha!',
   },
+};
+
+// ── MAYA — Auditory / Paw Patrol ────────────────────────────────────────
+const MAYA_REFRAMES = {
+  '4/5 + 1/3': {
+    steps: [
+      { label: 'Step 1 — Listen to Ryder\'s mission', content: 'Ryder says: "Chase found 4 out of 5 treats and Marshall found 1 out of 3. But their bags are different sizes, so we need to make them the same before we add."' },
+      { label: 'Step 2 — Ryder finds the common bag', content: '"The smallest bag that fits both 5-part and 3-part treats is 15-part! Multiply 5 × 3 = 15. Now Chase\'s 4/5 becomes 12/15 and Marshall\'s 1/3 becomes 5/15."' },
+      { label: 'Step 3 — Pups combine their treats', content: '"12 treats plus 5 treats equals 17 treats — all in bags of 15. That\'s 17/15, which is more than a full bag!"' },
+      { label: 'Step 4 — Ryder checks in', content: '"17/15 means 1 full bag plus 2 extra treats. Say it with me, Maya: four-fifths plus one-third equals seventeen-fifteenths!"' },
+    ],
+    simplifiedQuestion: { text: 'Chase has 12 treats out of 15 and Marshall has 5 out of 15. Say the total out loud — how many fifteenths?', options: ['15/15', '17/15', '12/15'], correctIndex: 1 },
+    encouragement: 'Ryder says "No job is too big, no pup is too small — and no fraction is too tricky for you, Maya!"',
+  },
+  '2/7 + 3/4': {
+    steps: [
+      { label: 'Step 1 — Skye\'s sky patrol report', content: 'Skye spots 2 out of 7 lost kittens in the park, and Rubble finds 3 out of 4 near the bridge. Ryder asks: "How many total? But their patrol zones are different sizes!"' },
+      { label: 'Step 2 — Ryder radios the team', content: '"PAW Patrol, we need to divide both zones into 28 equal sections — that\'s 7 × 4. Now Skye\'s 2/7 = 8/28, and Rubble\'s 3/4 = 21/28."' },
+      { label: 'Step 3 — Count all rescued kittens', content: '"8 kittens plus 21 kittens = 29 out of 28 sections. That\'s 29/28 — even more than one full zone! Mission accomplished!"' },
+      { label: 'Step 4 — Repeat after Ryder', content: '"Say it with me, Maya: two-sevenths plus three-fourths. Common denominator twenty-eight. Eight plus twenty-one equals twenty-nine twentyeighths!"' },
+    ],
+    simplifiedQuestion: { text: 'Skye rescued 8 kittens and Rubble rescued 21. Both patrols covered 28 sections. How many twentyeighths total?', options: ['28/28', '29/28', '21/28'], correctIndex: 1 },
+    encouragement: 'Skye says "This pup\'s gotta fly!" — and your math skills are soaring, Maya!',
+  },
+  '1/2 + 2/3': {
+    steps: [
+      { label: 'Step 1 — Marshall\'s story time', content: 'Marshall ate half a doggy biscuit (1/2), and Chase ate two-thirds of his (2/3). Ryder asks: "How much biscuit did they eat altogether? Let\'s talk it through!"' },
+      { label: 'Step 2 — Find the magic number', content: '"Both 2 and 3 fit into 6. So we re-describe: 1/2 = 3 sixths, and 2/3 = 4 sixths. Now the pieces are the same!"' },
+      { label: 'Step 3 — Add and say it aloud', content: '"3 sixths plus 4 sixths = 7 sixths. That\'s 7/6 — more than one whole biscuit! Say it: seven-sixths!"' },
+      { label: 'Step 4 — Understand the extra', content: '"7/6 = 1 whole biscuit plus 1/6 leftover. Together they ate a whole biscuit and a little more. Repeat: one and one-sixth!"' },
+    ],
+    simplifiedQuestion: { text: 'Marshall eats 3 sixths and Chase eats 4 sixths of their biscuits. How many sixths of biscuit were eaten total?', options: ['5/6', '7/6', '6/6'], correctIndex: 1 },
+    encouragement: 'Marshall says "I\'m fired up!" — and so is your fraction brain, Maya! Keep listening and learning!',
+  },
+  '3/8 + 1/4': {
+    steps: [
+      { label: 'Step 1 — Ryder gives a tip', content: '"Maya, here\'s a shortcut! 4 fits right into 8, so we only need to change one fraction. Listen carefully..."' },
+      { label: 'Step 2 — Convert the easy one', content: '"1/4 = 2/8. Say it: one quarter equals two eighths. The 3/8 stays exactly the same!"' },
+      { label: 'Step 3 — Add the eighths', content: '"3 eighths + 2 eighths = 5 eighths. That\'s it! Say the whole thing: three-eighths plus one-quarter equals five-eighths!"' },
+      { label: 'Step 4 — Check with Ryder', content: '"5/8 is a little more than half. Does that sound right? You nailed it, Maya!"' },
+    ],
+    simplifiedQuestion: { text: 'Chase has 3 treats out of 8 and Zuma has 2 out of 8. How many eighths together?', options: ['4/8', '5/8', '6/8'], correctIndex: 1 },
+    encouragement: 'Ryder says "Whenever you\'re in trouble, just yelp for help — but you didn\'t even need it this time, Maya!"',
+  },
+  '5/6 + 1/2': {
+    steps: [
+      { label: 'Step 1 — Rocky recycles the denominator', content: '"Don\'t lose it, reuse it!" Rocky says. 2 already fits into 6, so the common denominator is 6. No extra work!' },
+      { label: 'Step 2 — Convert 1/2', content: '"1/2 = 3/6. Repeat after Rocky: one-half equals three-sixths."' },
+      { label: 'Step 3 — Combine', content: '"5 sixths + 3 sixths = 8 sixths. Say it out loud, Maya: eight-sixths!"' },
+      { label: 'Step 4 — Make it a mixed number', content: '"8/6 is bigger than 1. Take out 6/6 (one whole) and you\'re left with 2/6 = 1/3. So 8/6 = 1 and 1/3!"' },
+    ],
+    simplifiedQuestion: { text: 'Rocky collects 5 cans out of 6 in the morning and 3 out of 6 in the afternoon. How many sixths total?', options: ['7/6', '8/6', '6/6'], correctIndex: 1 },
+    encouragement: 'Rocky says "Green means go!" — and you\'re really on a roll, Maya!',
+  },
+};
+
+// ── ELI — Kinesthetic / Minecraft ───────────────────────────────────────
+const ELI_REFRAMES = {
+  '4/5 + 1/3': {
+    steps: [
+      { label: 'Step 1 — Build two rows of blocks', content: 'Place a row of 5 blocks and fill in 4 of them (4/5). Then build another row of 3 blocks and fill in 1 (1/3). The rows are different lengths!' },
+      { label: 'Step 2 — Rebuild with 15-block rows', content: 'Break both rows and rebuild them each as 15 blocks long. Fill 12 blocks in the first row (4 × 3 = 12) and 5 in the second (1 × 5 = 5).' },
+      { label: 'Step 3 — Stack and count', content: 'Stack the filled blocks together: 12 + 5 = 17 filled blocks out of 15. You built 17/15 — that\'s more blocks than one full row!' },
+      { label: 'Step 4 — See the overflow', content: 'One complete row is 15. You have 2 extra blocks that overflow into a new row. 17/15 = 1 row + 2/15 extra.' },
+    ],
+    simplifiedQuestion: { text: 'Steve builds a 15-block row. He places 12 ore blocks, then adds 5 more. How many blocks total (as fifteenths)?', options: ['15/15', '17/15', '12/15'], correctIndex: 1 },
+    encouragement: 'Steve says "You\'re a master builder AND a master of fractions, Eli! Keep crafting!"',
+  },
+  '2/7 + 3/4': {
+    steps: [
+      { label: 'Step 1 — Craft two different-length walls', content: 'Build a wall of 7 blocks (fill 2 with diamond ore). Build another wall of 4 blocks (fill 3 with gold ore). Different lengths — can\'t combine yet!' },
+      { label: 'Step 2 — Rebuild both walls to 28 blocks', content: 'Break and rebuild each wall as 28 blocks long. The diamond wall gets 8 filled (2 × 4 = 8). The gold wall gets 21 filled (3 × 7 = 21).' },
+      { label: 'Step 3 — Mine and count', content: 'Count all the ore: 8 diamond + 21 gold = 29 blocks out of 28. That\'s 29/28 — you mined more than a full wall!' },
+      { label: 'Step 4 — Inventory check', content: '28/28 fills one wall, with 1 leftover block for the next wall. 29/28 = 1 and 1/28.' },
+    ],
+    simplifiedQuestion: { text: 'Steve mines 8 diamond blocks from one wall and 21 gold blocks from another (both 28-block walls). Total blocks as twentyeighths?', options: ['28/28', '29/28', '21/28'], correctIndex: 1 },
+    encouragement: 'Achievement unlocked: Fraction Master! Steve is proud of you, Eli!',
+  },
+  '1/2 + 2/3': {
+    steps: [
+      { label: 'Step 1 — Two crafting tables', content: 'One table has 2 slots (1 filled with an ingredient). Another has 3 slots (2 filled). The slots are different sizes — we need the same grid!' },
+      { label: 'Step 2 — Expand to a 6-slot grid', content: 'Rebuild both tables with 6 slots. The half becomes 3/6 (fill 3 slots). The two-thirds becomes 4/6 (fill 4 slots).' },
+      { label: 'Step 3 — Merge ingredients', content: 'Move all filled slots to one table: 3 + 4 = 7 filled out of 6 slots. That\'s 7/6!' },
+      { label: 'Step 4 — Place the extra', content: '6/6 fills one table completely, and 1 ingredient overflows to a new table. 7/6 = 1 and 1/6.' },
+    ],
+    simplifiedQuestion: { text: 'Steve fills 3 out of 6 slots on one table and 4 out of 6 on another. How many sixths when combined?', options: ['5/6', '7/6', '6/6'], correctIndex: 1 },
+    encouragement: 'You just crafted the answer from scratch, Eli! Steve says "That\'s legendary-tier math!"',
+  },
+  '3/8 + 1/4': {
+    steps: [
+      { label: 'Step 1 — Lucky find!', content: '4 divides evenly into 8, so you only need to resize ONE wall. That\'s like finding diamonds on the surface!' },
+      { label: 'Step 2 — Resize 1/4 to eighths', content: '1/4 = 2/8. Build 2 blocks out of an 8-block row. The 3/8 stays the same — no rebuilding needed!' },
+      { label: 'Step 3 — Stack the blocks', content: '3 blocks + 2 blocks = 5 blocks out of 8. That\'s 5/8 — a little more than half the wall!' },
+      { label: 'Step 4 — Inspect your build', content: 'Look at your 8-block wall: 5 filled, 3 empty. Does that look right? Perfect build, Eli!' },
+    ],
+    simplifiedQuestion: { text: 'Steve\'s 8-block wall has 3 iron blocks. He places 2 more. How many eighths filled?', options: ['4/8', '5/8', '6/8'], correctIndex: 1 },
+    encouragement: 'Steve says "You built that answer like a pro! No redstone needed — just brainpower!"',
+  },
+  '5/6 + 1/2': {
+    steps: [
+      { label: 'Step 1 — Quick craft', content: '2 goes right into 6, so the common grid is just 6 blocks. No need to expand — start building!' },
+      { label: 'Step 2 — Convert 1/2', content: '1/2 = 3/6. Place 3 blocks in a 6-block row.' },
+      { label: 'Step 3 — Add to the existing 5', content: '5 blocks + 3 blocks = 8 blocks out of 6 slots. That\'s 8/6 — overflow!' },
+      { label: 'Step 4 — Sort the inventory', content: '6/6 = 1 full row. 2 extra blocks start a new row. 8/6 = 1 and 2/6 = 1 and 1/3.' },
+    ],
+    simplifiedQuestion: { text: 'Steve has a 6-block row with 5 already placed. He adds 3 more. How many sixths total?', options: ['7/6', '8/6', '6/6'], correctIndex: 1 },
+    encouragement: 'Achievement unlocked: Fraction Overflow! Steve says "You\'re building math skills block by block, Eli!"',
+  },
+};
+
+// ── SOFIA — Reading / Encanto ───────────────────────────────────────────
+const SOFIA_REFRAMES = {
+  '4/5 + 1/3': {
+    steps: [
+      { label: 'Step 1 — The problem at the Casita', content: 'Mirabel needs 4/5 of a cup of sugar from Julieta\'s kitchen and 1/3 of a cup from Abuela\'s pantry. The measuring cups are different sizes, so she can\'t just pour them together.' },
+      { label: 'Step 2 — Mirabel finds the Least Common Denominator', content: 'She needs a measuring cup that works for both. Multiples of 5: 5, 10, 15. Multiples of 3: 3, 6, 9, 12, 15. Both share 15! She grabs the 15-part cup.' },
+      { label: 'Step 3 — Convert and pour', content: '4/5 = 12/15 (multiply top and bottom by 3). 1/3 = 5/15 (multiply top and bottom by 5). Now both measurements use the same cup.' },
+      { label: 'Step 4 — Add the portions', content: '12/15 + 5/15 = 17/15. That\'s 1 and 2/15 cups — Mirabel has more than enough for the recipe! She writes: "The LCD is the key."' },
+    ],
+    simplifiedQuestion: { text: 'Mirabel measures 12/15 of a cup and then adds 5/15. What fraction of a cup does she have in total?', options: ['15/15', '17/15', '12/15'], correctIndex: 1 },
+    encouragement: 'Mirabel says "We don\'t talk about different denominators — we just find the common one!" Beautiful work, Sofia!',
+  },
+  '2/7 + 3/4': {
+    steps: [
+      { label: 'Step 1 — Isabela\'s garden problem', content: 'Isabela planted flowers in 2/7 of one garden bed and 3/4 of another. She wants to know the total planted fraction, but the beds are divided differently.' },
+      { label: 'Step 2 — Find the LCD of 7 and 4', content: 'Multiples of 7: 7, 14, 21, 28. Multiples of 4: 4, 8, 12, 16, 20, 24, 28. The LCD is 28.' },
+      { label: 'Step 3 — Convert both fractions', content: '2/7 × 4/4 = 8/28. 3/4 × 7/7 = 21/28. Now both fractions describe parts of 28.' },
+      { label: 'Step 4 — Combine and simplify', content: '8/28 + 21/28 = 29/28. That\'s 1 and 1/28 — Isabela planted more than one full bed! She writes the answer clearly: 29/28.' },
+    ],
+    simplifiedQuestion: { text: 'Isabela plants 8 sections out of 28, then plants 21 more sections out of 28. What fraction of the garden is planted?', options: ['28/28', '29/28', '21/28'], correctIndex: 1 },
+    encouragement: 'Isabela says "What else can I do?" — and you just showed her you can conquer fractions! Amazing reading, Sofia!',
+  },
+  '1/2 + 2/3': {
+    steps: [
+      { label: 'Step 1 — Luisa\'s strength puzzle', content: 'Luisa carried 1/2 of the supplies in the morning and 2/3 in the afternoon. To find the total, we need matching denominators.' },
+      { label: 'Step 2 — Find the LCD of 2 and 3', content: 'Multiples of 2: 2, 4, 6. Multiples of 3: 3, 6. The LCD is 6.' },
+      { label: 'Step 3 — Rewrite both fractions', content: '1/2 = 3/6 (multiply numerator and denominator by 3). 2/3 = 4/6 (multiply numerator and denominator by 2). Now both use sixths.' },
+      { label: 'Step 4 — Add and interpret', content: '3/6 + 4/6 = 7/6 = 1 and 1/6. Luisa carried more than one full load! She didn\'t break a sweat either.' },
+    ],
+    simplifiedQuestion: { text: 'Luisa carries 3 sixths of the supplies, then 4 more sixths. What fraction of the load has she carried?', options: ['5/6', '7/6', '6/6'], correctIndex: 1 },
+    encouragement: 'Luisa says "I\'m not as strong as I thought — I\'m STRONGER!" and so are your fraction skills, Sofia!',
+  },
+  '3/8 + 1/4': {
+    steps: [
+      { label: 'Step 1 — A helpful shortcut', content: 'Mirabel notices that 4 divides evenly into 8. That means we already have a common denominator — it\'s 8! Only one fraction needs converting.' },
+      { label: 'Step 2 — Convert 1/4 to eighths', content: '1/4 × 2/2 = 2/8. The fraction 3/8 stays exactly the same.' },
+      { label: 'Step 3 — Add the numerators', content: '3/8 + 2/8 = 5/8. Just add the top numbers since the bottom numbers match.' },
+      { label: 'Step 4 — Reflect on the answer', content: '5/8 is a bit more than half (which would be 4/8). Mirabel writes: "When one denominator is a factor of the other, use the bigger one as the LCD."' },
+    ],
+    simplifiedQuestion: { text: 'Julieta uses 3/8 of the flour and then 2/8 more. What fraction of the flour has been used?', options: ['4/8', '5/8', '6/8'], correctIndex: 1 },
+    encouragement: 'Mirabel says "The miracle is YOU, Sofia!" — you found the shortcut and solved it perfectly!',
+  },
+  '5/6 + 1/2': {
+    steps: [
+      { label: 'Step 1 — Camilo\'s quick change', content: 'Camilo notices that 2 is a factor of 6, so the LCD is already 6. He says: "No need to change both — I only shapeshift when I have to!"' },
+      { label: 'Step 2 — Convert 1/2 to sixths', content: '1/2 × 3/3 = 3/6. The fraction 5/6 stays the same.' },
+      { label: 'Step 3 — Add them up', content: '5/6 + 3/6 = 8/6. The numerator is bigger than the denominator — that\'s an improper fraction!' },
+      { label: 'Step 4 — Write as a mixed number', content: '8 ÷ 6 = 1 remainder 2. So 8/6 = 1 and 2/6 = 1 and 1/3. Camilo writes both forms neatly.' },
+    ],
+    simplifiedQuestion: { text: 'Camilo collects 5/6 of the decorations and adds 3/6 more. What fraction does he have?', options: ['7/6', '8/6', '6/6'], correctIndex: 1 },
+    encouragement: 'Camilo shapeshifts into a math teacher and says "8/6 = 1 and 1/3 — you nailed it, Sofia!" Wonderful reading!',
+  },
+};
+
+export const DEMO_REFRAMES = {
+  aisha: AISHA_REFRAMES,
+  maya: MAYA_REFRAMES,
+  eli: ELI_REFRAMES,
+  sofia: SOFIA_REFRAMES,
 };
 
 export function getDemoLesson(studentId) {
