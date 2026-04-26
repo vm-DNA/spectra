@@ -1,7 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+let _model = null;
+function getModel() {
+  if (!_model) {
+    const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
+    _model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  }
+  return _model;
+}
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -17,7 +23,7 @@ function fileToBase64(file) {
 
 export async function extractTextFromFile(file) {
   const base64Data = await fileToBase64(file);
-  const result = await model.generateContent([
+  const result = await getModel().generateContent([
     {
       inlineData: {
         mimeType: file.type,
@@ -92,7 +98,7 @@ Return ONLY valid JSON with this exact structure (no markdown code fences):
   ]
 }`;
 
-      const result = await model.generateContent(prompt);
+      const result = await getModel().generateContent(prompt);
       let text = result.response.text();
       text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       adaptedVersions[student.id] = JSON.parse(text);
@@ -135,7 +141,22 @@ Return ONLY valid JSON (no markdown code fences):
   "encouragement": "warm encouraging message using their character"
 }`;
 
-  const result = await model.generateContent(prompt);
+  // Try server-side API first
+  try {
+    const res = await fetch('/api/reframe-question', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, studentProfile, wrongAttempts }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.reframe || data;
+    }
+  } catch (e) {
+    console.warn('Server reframe failed, falling back to client:', e);
+  }
+
+  const result = await getModel().generateContent(prompt);
   let text = result.response.text();
   text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
   return JSON.parse(text);
