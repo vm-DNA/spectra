@@ -6,6 +6,35 @@
 //  specific content themed to their character.
 // ============================================================
 
+// Cloudinary-hosted character images (uploaded via scripts/upload-cloudinary-characters.js)
+export const CLOUDINARY_CHARACTERS = {
+  spongebob: [
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189675/spectra/characters/spongebob/happy.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189681/spectra/characters/spongebob/teaching.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189686/spectra/characters/spongebob/cooking.png',
+  ],
+  bluey: [
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189691/spectra/characters/bluey/happy.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189697/spectra/characters/bluey/playing.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189702/spectra/characters/bluey/sharing.png',
+  ],
+  pawpatrol: [
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189708/spectra/characters/pawpatrol/chase.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189714/spectra/characters/pawpatrol/marshall.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189719/spectra/characters/pawpatrol/team.png',
+  ],
+  minecraft: [
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189724/spectra/characters/minecraft/building.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189730/spectra/characters/minecraft/crafting.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189736/spectra/characters/minecraft/exploring.png',
+  ],
+  encanto: [
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189741/spectra/characters/encanto/mirabel.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189746/spectra/characters/encanto/casita.png',
+    'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189751/spectra/characters/encanto/magic.png',
+  ],
+};
+
 export const DEMO_WORKSHEET = {
   title: 'Adding Fractions Worksheet',
   subject: 'Math',
@@ -29,6 +58,17 @@ export const DEMO_ADAPTED_LESSONS = {
     character: 'SpongeBob',
     mode: 'Visual',
     cloudinaryPrompt: 'SpongeBob SquarePants in the Krusty Krab kitchen dividing Krabby Patties into fraction pieces',
+    imageUrl: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189675/spectra/characters/spongebob/happy.png',
+    imageUrls: {
+      neutral: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189675/spectra/characters/spongebob/happy.png',
+      happy: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189681/spectra/characters/spongebob/teaching.png',
+      supportive: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189686/spectra/characters/spongebob/cooking.png',
+    },
+    characterImages: [
+      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189675/spectra/characters/spongebob/happy.png',
+      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189681/spectra/characters/spongebob/teaching.png',
+      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189686/spectra/characters/spongebob/cooking.png',
+    ],
     questions: [
       {
         id: 'dq1', text: '4/5 + 1/3 = ?',
@@ -84,7 +124,7 @@ body { font-family: 'Comic Sans MS', cursive; background: linear-gradient(135deg
 <div class="container">
   <div class="header"><h1>SpongeBob's Fraction Kitchen!</h1></div>
   <div class="character-area">
-    <img id="character-image" src="CHARACTER_IMAGE_PLACEHOLDER" alt="SpongeBob" onerror="this.style.display='none'" />
+    <img id="character-image" src="https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189675/spectra/characters/spongebob/happy.png" alt="SpongeBob" style="border-radius:50%;background:#87CEEB" />
     <div class="speech-bubble">
       <strong>SpongeBob says:</strong> "I'm ready! I'm ready! Let's learn about adding fractions by cutting Krabby Patties into equal pieces!"
     </div>
@@ -122,6 +162,17 @@ body { font-family: 'Comic Sans MS', cursive; background: linear-gradient(135deg
     character: 'Bluey',
     mode: 'Visual',
     cloudinaryPrompt: 'Bluey the cartoon dog sharing treats equally with Bingo showing fraction concepts',
+    imageUrl: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189691/spectra/characters/bluey/happy.png',
+    imageUrls: {
+      neutral: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189691/spectra/characters/bluey/happy.png',
+      happy: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189697/spectra/characters/bluey/playing.png',
+      supportive: 'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189702/spectra/characters/bluey/sharing.png',
+    },
+    characterImages: [
+      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189691/spectra/characters/bluey/happy.png',
+      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189697/spectra/characters/bluey/playing.png',
+      'https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189702/spectra/characters/bluey/sharing.png',
+    ],
     questions: [
       {
         id: 'dq1', text: '4/5 + 1/3 = ?',
@@ -173,7 +224,7 @@ body { font-family: 'Comic Sans MS', cursive; background: linear-gradient(135deg
 <div class="container">
   <div class="header"><h1>Bluey's Fraction Fun!</h1></div>
   <div class="character-area">
-    <img id="character-image" src="CHARACTER_IMAGE_PLACEHOLDER" alt="Bluey" onerror="this.style.display='none'" />
+    <img id="character-image" src="https://res.cloudinary.com/dsw7iha3n/image/upload/v1777189691/spectra/characters/bluey/happy.png" alt="Bluey" style="border-radius:12px" />
     <div class="speech"><strong>Bluey says:</strong> "Wackadoo! Let's learn fractions by sharing treats with Bingo! When we share, we use fractions!"</div>
   </div>
   <div class="card">
