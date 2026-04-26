@@ -1,7 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+let _model = null;
+function getModel() {
+  if (!_model) {
+    const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
+    _model = genAI.getGenerativeModel({ model: 'gemma-3-12b-it' });
+  }
+  return _model;
+}
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -17,7 +23,7 @@ function fileToBase64(file) {
 
 export async function extractTextFromFile(file) {
   const base64Data = await fileToBase64(file);
-  const result = await model.generateContent([
+  const result = await getModel().generateContent([
     {
       inlineData: {
         mimeType: file.type,
@@ -30,6 +36,28 @@ export async function extractTextFromFile(file) {
 }
 
 export async function adaptLesson(rawContent, subject, students) {
+  // Try server-side Gemma API first (sends all students at once)
+  try {
+    const formData = new FormData();
+    formData.append('rawContent', rawContent);
+    formData.append('subject', subject);
+    formData.append('students', JSON.stringify(students));
+
+    const res = await fetch('/api/adapt-lesson', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.results || data;
+    }
+    console.warn('Server API returned', res.status, '— falling back to client Gemini');
+  } catch (serverErr) {
+    console.warn('Server API failed, falling back to client Gemini:', serverErr);
+  }
+
+  // Fallback: client-side Gemini API
   const adaptedVersions = {};
 
   for (const student of students) {
@@ -48,7 +76,7 @@ Subject: ${subject}
 Original worksheet content:
 ${rawContent}
 
-Rewrite this lesson using the student's favorite characters. Keep the language appropriate for ${student.grade} level. Avoid frustration triggers (${student.frustrationTriggers.join(', ')}). Be encouraging and warm in tone. Generate 3-5 quiz questions using the character theme.
+Rewrite this lesson using the student's favorite characters. Keep the language appropriate for ${student.grade} level. Avoid frustration triggers (${student.frustrationTriggers.join(', ')}). Respect sensory preferences (${(student.sensoryPrefs || []).join(', ')}). Be encouraging and warm in tone. Generate 3-5 quiz questions using the character theme.
 
 Return ONLY valid JSON with this exact structure (no markdown code fences):
 {
@@ -56,26 +84,27 @@ Return ONLY valid JSON with this exact structure (no markdown code fences):
   "formula": "key formula or null",
   "hint": "helpful hint using character theme",
   "cloudinaryPrompt": "description for themed illustration",
-  "elevenLabsScript": "text to read aloud for auditory learners",
+  "elevenLabsScript": "narration text for auditory learners",
+  "interactiveHtml": "self-contained HTML with inline CSS/JS for kinesthetic learners",
+  "chatContext": "key vocabulary for the chat tutor",
   "questions": [
     {
       "id": "q1",
       "text": "question using character theme",
       "options": ["A", "B", "C"],
       "correctIndex": 0,
-      "hint": "simpler hint if wrong",
-      "reframeExplanation": "step-by-step breakdown if struggling"
+      "hint": "simpler hint if wrong"
     }
   ]
 }`;
 
-      const result = await model.generateContent(prompt);
+      const result = await getModel().generateContent(prompt);
       let text = result.response.text();
       text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
       adaptedVersions[student.id] = JSON.parse(text);
     } catch (err) {
       console.error(`Failed to adapt lesson for ${student.id}:`, err);
-      adaptedVersions[student.id] = null;
+      adaptedVersions[student.id] = { error: err.message };
     }
   }
 
@@ -112,7 +141,22 @@ Return ONLY valid JSON (no markdown code fences):
   "encouragement": "warm encouraging message using their character"
 }`;
 
-  const result = await model.generateContent(prompt);
+  // Try server-side API first
+  try {
+    const res = await fetch('/api/reframe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, studentProfile, wrongAttempts }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.reframe || data;
+    }
+  } catch (e) {
+    console.warn('Server reframe failed, falling back to client:', e);
+  }
+
+  const result = await getModel().generateContent(prompt);
   let text = result.response.text();
   text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
   return JSON.parse(text);

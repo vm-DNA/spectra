@@ -1,12 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStudent } from '../../lib/mockData';
 import { Alert } from '../../components/UI';
+import { useAuth } from '../../lib/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 const STUDENT = getStudent('jamie');
 
 export default function CompletionScreen() {
   const navigate = useNavigate();
+  const { userProfile } = useAuth();
+  const [teacherName, setTeacherName] = useState('Your teacher');
+
+  useEffect(() => {
+    if (!userProfile?.teacherUid) return;
+    getDoc(doc(db, 'users', userProfile.teacherUid))
+      .then(snap => { if (snap.exists()) setTeacherName(snap.data().name || 'Your teacher'); })
+      .catch(() => {});
+  }, [userProfile?.teacherUid]);
 
   const score      = 4;
   const total      = 5;
@@ -55,7 +67,7 @@ export default function CompletionScreen() {
         <span style={{ fontSize: 16 }}>📊</span>
         <div>
           <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--green-dark)' }}>
-            Sent to Ms. Rivera
+            Sent to {teacherName}
           </div>
           <div style={{ fontSize: 12, color: 'var(--green-dark)', opacity: 0.8, marginTop: 2 }}>
             Your completion status, engagement score, and session data have been shared automatically.

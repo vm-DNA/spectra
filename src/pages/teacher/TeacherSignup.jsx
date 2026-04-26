@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/AuthContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 function generateClassCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -38,11 +40,17 @@ export default function TeacherSignup() {
     setBusy(true);
     try {
       const classCode = generateClassCode();
-      await signup(email, password, 'teacher', {
+      const profile = await signup(email, password, 'teacher', {
         name,
         school,
         room,
         classes: [{ id: classCode, name: `${name} - ${room}`, room, code: classCode }],
+      });
+      await setDoc(doc(db, 'classCodes', classCode), {
+        teacherUid: profile.uid,
+        className: `${name} - ${room}`,
+        room,
+        createdAt: new Date().toISOString(),
       });
       navigate('/teacher/dashboard');
     } catch (err) {

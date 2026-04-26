@@ -42,7 +42,7 @@ export default function Landing() {
           </div>
           <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>I'm a teacher</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20 }}>
-            Upload lessons, monitor students in real time, and view AI-powered engagement reports
+            Upload lessons, manage your class, and view AI-powered engagement reports
           </div>
           <button className="btn btn-primary btn-full">Enter teacher view</button>
         </div>

@@ -1,12 +1,77 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { STUDENTS, statusBadgeClass, statusLabel } from '../../lib/mockData';
+import { PUBLISHED_ASSIGNMENTS, PAST_ASSIGNMENTS, TEACHER, statusBadgeClass, statusLabel } from '../../lib/mockData';
 import { StatCard, Alert, Avatar, StatusDot, Badge, ProgressBar } from '../../components/UI';
+import { useAuth } from '../../lib/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { DEMO_FRUSTRATION_EVENTS } from '../../lib/demoData';
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const { userProfile } = useAuth();
+  const [enrolledStudents, setEnrolledStudents] = useState([]);
+  const [liveFrustration, setLiveFrustration] = useState([]);
 
-  const highFrustration = STUDENTS.filter(s => s.status === 'stress');
+  // Poll for live frustration events from student demo view
+  useEffect(() => {
+    const poll = () => {
+      try {
+        const stored = localStorage.getItem('spectra_live_frustration');
+        if (stored) setLiveFrustration(JSON.parse(stored));
+      } catch {}
+    };
+    poll();
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const teacherName = userProfile?.name || TEACHER.name;
+  const teacherRoom = userProfile?.room || TEACHER.room;
+  const classCodes = (userProfile?.classes || []).map(c => c.code).filter(Boolean);
+
+  useEffect(() => {
+    if (!classCodes.length) return;
+    async function fetchStudents() {
+      try {
+        const q = query(collection(db, 'users'), where('role', '==', 'student'), where('classCode', 'in', classCodes.slice(0, 10)));
+        const snap = await getDocs(q);
+        const enrolled = snap.docs.map(d => {
+          const data = d.data();
+          const name = data.name || 'Student';
+          const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          return {
+            id: d.id,
+            firestoreStudent: true,
+            name,
+            initials,
+            grade: data.grade || '',
+            avatarColor: { bg: '#E6F1FB', text: '#042C53' },
+            learningStyles: data.learningStyles || [],
+            allStyles: ['Visual', 'Auditory', 'Reading', 'Kinesthetic'],
+            characters: data.characters || [],
+            allCharacters: ['Bluey', 'Bingo', 'Paw Patrol', 'SpongeBob', 'Minecraft Steve', 'Mirabel (Encanto)'],
+            sensoryPrefs: data.sensoryPrefs || [],
+            frustrationTriggers: data.frustrationTriggers || [],
+            engagementPct: 0,
+            frustrationLevel: 'low',
+            frustrationScore: 0,
+            status: 'offline',
+            sessionActive: false,
+            frustrationHistory: [0, 0, 0, 0, 0, 0, 0],
+            currentAssignment: null,
+          };
+        });
+        setEnrolledStudents(enrolled);
+      } catch (e) {
+        console.error('Failed to fetch enrolled students:', e);
+      }
+    }
+    fetchStudents();
+  }, [classCodes.join(',')]);
+
+  const allStudents = enrolledStudents;
+  const highFrustration = allStudents.filter(s => s.status === 'stress');
 
   return (
     <div className="page">
@@ -19,9 +84,9 @@ export default function TeacherDashboard() {
             <strong>{s.name}</strong> — high frustration detected. AI has auto-reframed.{' '}
             <span
               style={{ textDecoration: 'underline', cursor: 'pointer' }}
-              onClick={() => navigate('/teacher/monitor')}
+              onClick={() => navigate(`/teacher/profile/${s.id}`)}
             >
-              View live monitor →
+              View student profile →
             </span>
           </div>
         </Alert>
@@ -30,9 +95,9 @@ export default function TeacherDashboard() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <div className="page-title">Room 4B — Ms. Rivera</div>
+          <div className="page-title">{teacherRoom} — {teacherName}</div>
           <div className="page-sub">
-            {STUDENTS.filter(s => s.sessionActive).length} active sessions · {STUDENTS.length} students total
+            {allStudents.filter(s => s.sessionActive).length} active sessions · {allStudents.length} students total
           </div>
         </div>
         <button className="btn btn-primary" onClick={() => navigate('/teacher/upload')}>
@@ -42,7 +107,7 @@ export default function TeacherDashboard() {
 
       {/* Stats row */}
       <div className="grid-4">
-        <StatCard label="Students"       value={STUDENTS.length} />
+        <StatCard label="Students"       value={allStudents.length} />
         <StatCard label="Lessons today"  value={3} sub="1 auto-adapted" />
         <StatCard label="Avg engagement" value="74%" valueColor="var(--purple)" />
         <StatCard label="AI reframes"    value={9}  valueColor="var(--coral)" sub="today" />
@@ -52,7 +117,7 @@ export default function TeacherDashboard() {
       <div>
         <div className="card-title" style={{ marginBottom: 10 }}>Students</div>
         <div className="grid-2">
-          {STUDENTS.map(student => (
+          {allStudents.map(student => (
             <div
               key={student.id}
               className="card"
@@ -104,6 +169,140 @@ export default function TeacherDashboard() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Frustration Flags — recent AI interventions */}
+      {(DEMO_FRUSTRATION_EVENTS.length > 0 || liveFrustration.length > 0) && (
+        <div>
+          <div className="card-title" style={{ marginBottom: 10 }}>
+            Frustration Flags
+            {liveFrustration.length > 0 && (
+              <span style={{
+                marginLeft: 8, padding: '2px 8px', borderRadius: 10,
+                background: 'var(--coral-light)', color: 'var(--coral)',
+                fontSize: 11, fontWeight: 700,
+              }}>
+                {liveFrustration.length} LIVE
+              </span>
+            )}
+          </div>
+          <div className="stack" style={{ gap: 6 }}>
+            {[...liveFrustration, ...DEMO_FRUSTRATION_EVENTS].map(evt => (
+              <div key={evt.id} className="card" style={{
+                padding: '10px 14px',
+                borderLeft: `3px solid ${evt.severity === 'high' ? 'var(--coral)' : 'var(--amber)'}`,
+                cursor: 'pointer',
+              }}
+                onClick={() => navigate('/teacher/reports')}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 16 }}>{evt.severity === 'high' ? '🔴' : '🟡'}</span>
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: 13 }}>{evt.studentName}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{evt.trigger}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Badge variant={evt.status === 'auto-reframed' ? 'teal' : 'amber'}>{evt.status}</Badge>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Current Assignments & Past Assignments bubbles */}
+      <div className="grid-2" style={{ gap: 16 }}>
+
+        {/* Current Assignments — bottom left */}
+        <div
+          className="card"
+          style={{ cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
+          onClick={() => navigate('/teacher/upload')}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--teal)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(29,158,117,0.12)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
+        >
+          <div className="row" style={{ gap: 10, marginBottom: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'var(--teal-light)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', fontSize: 16,
+            }}>
+              📋
+            </div>
+            <div>
+              <div style={{ fontWeight: 500, fontSize: 14 }}>Current Assignments</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                {PUBLISHED_ASSIGNMENTS.length} active assignment{PUBLISHED_ASSIGNMENTS.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </div>
+          {PUBLISHED_ASSIGNMENTS.slice(0, 2).map(a => {
+            const completedCount = Object.values(a.studentStatus).filter(s => s.status === 'completed').length;
+            const totalCount = a.assignedTo.length;
+            return (
+              <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderTop: '0.5px solid var(--border)', fontSize: 12 }}>
+                <div>
+                  <span style={{ fontWeight: 500 }}>{a.title}</span>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Due {a.dueDate}</div>
+                </div>
+                <Badge variant="teal">{completedCount}/{totalCount}</Badge>
+              </div>
+            );
+          })}
+          <div style={{ fontSize: 11, color: 'var(--teal)', fontWeight: 500, marginTop: 8, textAlign: 'right' }}>
+            View all →
+          </div>
+        </div>
+
+        {/* Past Assignments — bottom right */}
+        <div
+          className="card"
+          style={{ cursor: 'pointer', transition: 'border-color 0.15s, box-shadow 0.15s' }}
+          onClick={() => navigate('/teacher/reports')}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--purple)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(83,74,183,0.12)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.boxShadow = ''; }}
+        >
+          <div className="row" style={{ gap: 10, marginBottom: 10 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'var(--purple-light)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', fontSize: 16,
+            }}>
+              📊
+            </div>
+            <div>
+              <div style={{ fontWeight: 500, fontSize: 14 }}>Past Assignments</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                {PAST_ASSIGNMENTS.length} completed assignment{PAST_ASSIGNMENTS.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </div>
+          {PAST_ASSIGNMENTS.slice(0, 2).map(a => {
+            const avgScore = Math.round(
+              Object.values(a.studentResults).reduce((sum, r) => sum + r.score, 0) /
+              Object.values(a.studentResults).length
+            );
+            return (
+              <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderTop: '0.5px solid var(--border)', fontSize: 12 }}>
+                <div>
+                  <span style={{ fontWeight: 500 }}>{a.title}</span>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>Completed {a.completedDate}</div>
+                </div>
+                <Badge variant={avgScore >= 80 ? 'teal' : avgScore >= 60 ? 'amber' : 'coral'}>Avg {avgScore}%</Badge>
+              </div>
+            );
+          })}
+          <div style={{ fontSize: 11, color: 'var(--purple)', fontWeight: 500, marginTop: 8, textAlign: 'right' }}>
+            View all →
+          </div>
+        </div>
+
       </div>
 
     </div>

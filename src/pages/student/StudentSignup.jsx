@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 export default function StudentSignup() {
   const navigate = useNavigate();
@@ -30,13 +32,26 @@ export default function StudentSignup() {
     }
     setBusy(true);
     try {
+      const codeUpper = classCode.trim().toUpperCase();
+      let teacherUid = '';
+      try {
+        const codeSnap = await getDoc(doc(db, 'classCodes', codeUpper));
+        if (codeSnap.exists()) {
+          teacherUid = codeSnap.data().teacherUid || '';
+        }
+      } catch (e) {
+        console.warn('Could not validate class code:', e);
+      }
+
       await signup(email, password, 'student', {
         name,
         grade: grade || '',
-        classCode,
-        teacherId: '',
+        classCode: codeUpper,
+        teacherUid,
         characters: [],
         learningStyles: [],
+        sensoryPrefs: [],
+        frustrationTriggers: [],
       });
       navigate('/student/home');
     } catch (err) {

@@ -12,7 +12,7 @@ import TeacherSignup   from './pages/teacher/TeacherSignup';
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import UploadAssignment from './pages/teacher/UploadAssignment';
 import StudentProfile   from './pages/teacher/StudentProfile';
-import LiveMonitor      from './pages/teacher/LiveMonitor';
+import TeacherSettings  from './pages/teacher/TeacherSettings';
 import TeacherReports   from './pages/teacher/TeacherReports';
 
 // Student pages
@@ -23,6 +23,8 @@ import SelectAssignment  from './pages/student/SelectAssignment';
 import CuratedLesson     from './pages/student/CuratedLesson';
 import AutoReframe       from './pages/student/AutoReframe';
 import CompletionScreen  from './pages/student/CompletionScreen';
+import StudentSettings   from './pages/student/StudentSettings';
+import DemoStudentView   from './pages/student/DemoStudentView';
 
 // Layout wrappers
 import TeacherLayout from './components/TeacherLayout';
@@ -51,6 +53,7 @@ function AppRoutes() {
     <Routes>
       {/* Shared landing */}
       <Route path="/"        element={<Landing />} />
+      <Route path="/demo"    element={<DemoStudentView />} />
 
       {/* Teacher auth */}
       <Route path="/teacher/login"   element={<TeacherLogin />} />
@@ -62,7 +65,7 @@ function AppRoutes() {
         <Route path="dashboard"         element={<TeacherDashboard />} />
         <Route path="upload"            element={<UploadAssignment />} />
         <Route path="profile/:studentId" element={<StudentProfile />} />
-        <Route path="monitor"           element={<LiveMonitor />} />
+        <Route path="settings"          element={<TeacherSettings />} />
         <Route path="reports"           element={<TeacherReports />} />
       </Route>
 
@@ -78,6 +81,7 @@ function AppRoutes() {
         <Route path="lesson/:assignmentId" element={<CuratedLesson />} />
         <Route path="reframe"           element={<AutoReframe />} />
         <Route path="complete"          element={<CompletionScreen />} />
+        <Route path="settings"          element={<StudentSettings />} />
       </Route>
 
       {/* Fallback */}
