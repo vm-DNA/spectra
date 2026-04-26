@@ -243,7 +243,7 @@ function normalizeAdaptation(raw, student, subject) {
           instruction: asText(step?.instruction, 'Complete this mini-step before moving on.'),
         }))
       : [],
-    interactiveHtml: asText(raw.interactiveHtml, ''),
+    interactiveHtml: (raw.interactiveHtml && raw.interactiveHtml !== 'null') ? asText(raw.interactiveHtml, '') : null,
     chatContext: asText(
       raw.chatContext,
       `This lesson covers ${subject}. The key concept is explained step by step using examples the student loves.`
