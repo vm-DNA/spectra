@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ASSIGNMENTS, getStudent } from '../../lib/mockData';
+import { ASSIGNMENTS } from '../../lib/mockData';
 import { Badge } from '../../components/UI';
-
-const STUDENT = getStudent('jamie');
+import { useAuth } from '../../lib/AuthContext';
 
 export default function StudentHome() {
   const navigate = useNavigate();
-  const [mood, setMood] = useState(null); // 'happy' | 'ok' | 'sad'
+  const { userProfile } = useAuth();
+  const [mood, setMood] = useState(null);
+
+  const studentName = userProfile?.name?.split(' ')[0] || 'Student';
+  const characters = userProfile?.characters || [];
+  const charName = characters[0] || 'your character';
 
   const newAssignments  = ASSIGNMENTS.filter(a => a.status === 'new');
   const doneAssignments = ASSIGNMENTS.filter(a => a.status === 'done');
@@ -23,20 +27,18 @@ export default function StudentHome() {
   return (
     <div className="stack" style={{ gap: 14 }}>
 
-      {/* Greeting banner */}
       <div style={{
         background: 'var(--purple-light)', borderRadius: 'var(--radius)',
         padding: '14px 16px',
       }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--purple-dark)' }}>
-          Hi, {STUDENT.name.split(' ')[0]}! 👋
+          Hi, {studentName}!
         </div>
         <div style={{ fontSize: 13, color: 'var(--purple-dark)', opacity: 0.8, marginTop: 2 }}>
-          Ready to learn with {STUDENT.characters[0]} today?
+          {characters.length > 0 ? `Ready to learn with ${charName} today?` : 'Ready to learn today?'}
         </div>
       </div>
 
-      {/* Mood check-in */}
       {!mood && (
         <div className="card">
           <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 12, textAlign: 'center' }}>
@@ -59,11 +61,10 @@ export default function StudentHome() {
 
       {mood && (
         <div className="alert alert-info" style={{ fontSize: 13 }}>
-          Thanks for sharing! {mood === 'sad' ? "It's okay to have a tough day. Let's take it slow 💙" : "Let's get started! 🌟"}
+          Thanks for sharing! {mood === 'sad' ? "It's okay to have a tough day. Let's take it slow." : "Let's get started!"}
         </div>
       )}
 
-      {/* Today's homework */}
       <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: -6 }}>
         Today's homework
       </div>
@@ -87,12 +88,11 @@ export default function StudentHome() {
             <Badge variant="purple">New</Badge>
           </div>
           <div style={{ fontSize: 12, color: 'var(--purple)', marginTop: 8, fontWeight: 500 }}>
-            Tap to start →
+            Tap to start
           </div>
         </div>
       ))}
 
-      {/* Past homework */}
       {doneAssignments.length > 0 && (
         <>
           <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginBottom: -6 }}>
@@ -102,14 +102,13 @@ export default function StudentHome() {
             <div key={a.id} className="card" style={{ opacity: 0.65, cursor: 'pointer' }} onClick={() => navigate(`/student/lesson/${a.id}`)}>
               <div className="row-between">
                 <div style={{ fontSize: 13 }}>{a.title}</div>
-                <Badge variant="green">Done ✓</Badge>
+                <Badge variant="green">Done</Badge>
               </div>
             </div>
           ))}
         </>
       )}
 
-      {/* Stars */}
       <div className="row" style={{ gap: 4, marginTop: 4 }}>
         {'★★★'.split('').map((s, i) => (
           <span key={i} style={{ color: 'var(--amber)', fontSize: 20 }}>★</span>

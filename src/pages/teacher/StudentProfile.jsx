@@ -1,28 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getStudent } from '../../lib/mockData';
+import { getStudent, STUDENTS } from '../../lib/mockData';
 import { Avatar, Badge, ProgressBar, TlItem } from '../../components/UI';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function StudentProfile() {
   const { studentId } = useParams();
   const navigate      = useNavigate();
-  const student       = getStudent(studentId);
+
+  const isMockStudent = STUDENTS.some(s => s.id === studentId);
+  const mockStudent   = getStudent(studentId);
+
+  const [firestoreData, setFirestoreData] = useState(null);
+  const [loading, setLoading] = useState(!isMockStudent);
+
+  useEffect(() => {
+    if (isMockStudent) return;
+    async function load() {
+      try {
+        const snap = await getDoc(doc(db, 'users', studentId));
+        if (snap.exists()) {
+          const d = snap.data();
+          const name = d.name || 'Student';
+          setFirestoreData({
+            id: studentId,
+            firestoreStudent: true,
+            name,
+            initials: name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase(),
+            grade: d.grade || '',
+            avatarColor: { bg: '#E6F1FB', text: '#042C53' },
+            learningStyles: d.learningStyles || [],
+            allStyles: ['Visual', 'Auditory', 'Reading', 'Kinesthetic'],
+            characters: d.characters || [],
+            allCharacters: ['Bluey', 'Bingo', 'Paw Patrol', 'SpongeBob', 'Minecraft Steve', 'Mirabel (Encanto)'],
+            sensoryPrefs: d.sensoryPrefs || [],
+            frustrationTriggers: d.frustrationTriggers || [],
+            engagementPct: 0,
+            frustrationLevel: 'low',
+            frustrationScore: 0,
+            status: 'offline',
+            sessionActive: false,
+            frustrationHistory: [0, 0, 0, 0, 0, 0, 0],
+            currentAssignment: null,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load student:', e);
+      }
+      setLoading(false);
+    }
+    load();
+  }, [studentId, isMockStudent]);
+
+  const student = isMockStudent ? mockStudent : (firestoreData || mockStudent);
 
   const [selectedStyles,   setSelectedStyles]   = useState(student.learningStyles);
   const [selectedChars,    setSelectedChars]    = useState(student.characters);
   const [selectedSensory,  setSelectedSensory]  = useState(student.sensoryPrefs);
   const [selectedTriggers, setSelectedTriggers] = useState(student.frustrationTriggers);
-  const [editing,          setEditing]          = useState(false);
+  const [editing,          setEditing]          = useState(true);
   const [saved,            setSaved]            = useState(false);
+
+  useEffect(() => {
+    if (firestoreData) {
+      setSelectedStyles(firestoreData.learningStyles);
+      setSelectedChars(firestoreData.characters);
+      setSelectedSensory(firestoreData.sensoryPrefs);
+      setSelectedTriggers(firestoreData.frustrationTriggers);
+    }
+  }, [firestoreData]);
 
   const toggle = (setter, value) => setter(prev =>
     prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]
   );
 
-  const handleSave = () => {
-    // TODO: persist to backend
+  const handleSave = async () => {
+    if (!isMockStudent && student.firestoreStudent) {
+      try {
+        await updateDoc(doc(db, 'users', studentId), {
+          learningStyles: selectedStyles,
+          characters: selectedChars,
+          sensoryPrefs: selectedSensory,
+          frustrationTriggers: selectedTriggers,
+        });
+      } catch (e) {
+        console.error('Failed to save student profile:', e);
+      }
+    }
     setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

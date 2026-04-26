@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { TEACHER } from '../lib/mockData';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 const NAV_ITEMS = [
   { label: 'Dashboard',   path: '/teacher/dashboard' },
   { label: 'Assignments', path: '/teacher/upload' },
-  { label: 'Live monitor',path: '/teacher/monitor' },
   { label: 'Reports',     path: '/teacher/reports' },
   { label: 'Settings',    path: '/teacher/settings' },
 ];
@@ -68,6 +67,12 @@ export default function TeacherLayout() {
     if (userProfile?.uid) {
       try {
         await updateDoc(doc(db, 'users', userProfile.uid), { classes: updated });
+        await setDoc(doc(db, 'classCodes', code), {
+          teacherUid: userProfile.uid,
+          className: newClassName.trim(),
+          room: newClassRoom.trim(),
+          createdAt: new Date().toISOString(),
+        });
         await refreshProfile();
       } catch {
         setClassError('Failed to save class. Please try again.');
@@ -126,7 +131,7 @@ export default function TeacherLayout() {
             </span>
 
             {showClassMenu && (
-              <div style={{ ...dropdownStyle, right: 'auto', left: 0, minWidth: 220 }}>
+              <div style={{ ...dropdownStyle, right: 0, minWidth: 220, maxWidth: 'calc(100vw - 40px)' }}>
                 {classes.map((cls, idx) => (
                   <div
                     key={cls.id || idx}
@@ -206,6 +211,7 @@ export default function TeacherLayout() {
                 </div>
                 <div
                   style={menuItemStyle}
+                  onClick={() => { setShowProfileMenu(false); navigate('/teacher/settings'); }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >

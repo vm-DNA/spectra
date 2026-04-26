@@ -30,6 +30,28 @@ export async function extractTextFromFile(file) {
 }
 
 export async function adaptLesson(rawContent, subject, students) {
+  // Try server-side Gemma API first (sends all students at once)
+  try {
+    const formData = new FormData();
+    formData.append('rawContent', rawContent);
+    formData.append('subject', subject);
+    formData.append('students', JSON.stringify(students));
+
+    const res = await fetch('/api/adapt-lesson', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return data.results || data;
+    }
+    console.warn('Server API returned', res.status, '— falling back to client Gemini');
+  } catch (serverErr) {
+    console.warn('Server API failed, falling back to client Gemini:', serverErr);
+  }
+
+  // Fallback: client-side Gemini API
   const adaptedVersions = {};
 
   for (const student of students) {
@@ -50,30 +72,22 @@ ${rawContent}
 
 Rewrite this lesson using the student's favorite characters. Keep the language appropriate for ${student.grade} level. Avoid frustration triggers (${student.frustrationTriggers.join(', ')}). Respect sensory preferences (${(student.sensoryPrefs || []).join(', ')}). Be encouraging and warm in tone. Generate 3-5 quiz questions using the character theme.
 
-Based on the student's learning style, emphasize:
-- Visual: detailed image description, minimal text
-- Auditory: warm conversational narration script
-- Reading: rich text content with key vocabulary
-- Kinesthetic: interactive HTML/CSS/JS snippet for hands-on learning
-
 Return ONLY valid JSON with this exact structure (no markdown code fences):
 {
   "adaptedText": "lesson content rewritten using student's characters",
   "formula": "key formula or null",
   "hint": "helpful hint using character theme",
-  "cloudinaryPrompt": "description for themed illustration featuring the character",
-  "elevenLabsScript": "warm narration text as if the character is talking to the student",
-  "interactiveHtml": "self-contained HTML with inline CSS/JS for interactive lesson (for kinesthetic learners)",
-  "chatContext": "key vocabulary and concepts for the chat tutor to reference",
-  "interactivePlan": [{"step": "step_name", "instruction": "what to do"}],
+  "cloudinaryPrompt": "description for themed illustration",
+  "elevenLabsScript": "narration text for auditory learners",
+  "interactiveHtml": "self-contained HTML with inline CSS/JS for kinesthetic learners",
+  "chatContext": "key vocabulary for the chat tutor",
   "questions": [
     {
       "id": "q1",
       "text": "question using character theme",
       "options": ["A", "B", "C"],
       "correctIndex": 0,
-      "hint": "simpler hint if wrong",
-      "reframeExplanation": "step-by-step breakdown if struggling"
+      "hint": "simpler hint if wrong"
     }
   ]
 }`;
@@ -84,7 +98,7 @@ Return ONLY valid JSON with this exact structure (no markdown code fences):
       adaptedVersions[student.id] = JSON.parse(text);
     } catch (err) {
       console.error(`Failed to adapt lesson for ${student.id}:`, err);
-      adaptedVersions[student.id] = null;
+      adaptedVersions[student.id] = { error: err.message };
     }
   }
 

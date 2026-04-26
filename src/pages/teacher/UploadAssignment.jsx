@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { STUDENTS, ASSIGNMENTS } from '../../lib/mockData';
-import { Alert } from '../../components/UI';
-import { adaptLesson } from '../../lib/gemmaApi';
+import { STUDENTS, ASSIGNMENTS, PUBLISHED_ASSIGNMENTS } from '../../lib/mockData';
+import { Alert, Badge, Avatar, ProgressBar } from '../../components/UI';
+import { adaptLesson, extractTextFromFile } from '../../lib/geminiClient';
 import { useLessonContext } from '../../lib/LessonContext';
 
 const SUBJECTS = ['Math', 'Reading', 'Science', 'Social Skills', 'Writing'];
@@ -25,9 +25,14 @@ export default function UploadAssignment() {
     setLoading(true);
     setError(null);
     try {
-      const rawContent = content || '';
+      let rawContent = content || '';
 
-      if (!rawContent.trim() && !file) {
+      if (file) {
+        const extractedText = await extractTextFromFile(file);
+        rawContent = rawContent ? `${rawContent}\n\n${extractedText}` : extractedText;
+      }
+
+      if (!rawContent.trim()) {
         setError('Please provide lesson content or upload a file.');
         return;
       }
@@ -42,16 +47,11 @@ export default function UploadAssignment() {
         grade: s.grade,
         learningStyles: s.learningStyles,
         characters: s.characters,
-        sensoryPrefs: s.sensoryPrefs,
         frustrationTriggers: s.frustrationTriggers,
+        sensoryPrefs: s.sensoryPrefs,
       }));
 
-      const result = await adaptLesson({
-        file,
-        rawContent,
-        subject,
-        students: studentsPayload,
-      });
+      const result = await adaptLesson(rawContent, subject, studentsPayload);
 
       setAdaptedVersions(result);
       localStorage.setItem('spectra_adapted_lesson', JSON.stringify(result));
@@ -219,6 +219,25 @@ export default function UploadAssignment() {
                   ))}
                 </div>
               )}
+
+              {/* Learning modality breakdown */}
+              <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Learning Modalities</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
+                  <div style={{ padding: 6, background: 'var(--purple-light)', borderRadius: 4 }}>
+                    📷 Visual: {preview.imageUrls ? 'Image ready' : preview.cloudinaryPrompt ? 'Prompt ready' : 'Pending'}
+                  </div>
+                  <div style={{ padding: 6, background: 'var(--teal-light)', borderRadius: 4 }}>
+                    🔊 Audio: {preview.audioUrl ? 'Audio ready' : preview.elevenLabsScript ? 'Script ready' : 'Pending'}
+                  </div>
+                  <div style={{ padding: 6, background: '#FFF8E7', borderRadius: 4 }}>
+                    📖 Read: {preview.chatContext ? 'Context ready' : 'Pending'}
+                  </div>
+                  <div style={{ padding: 6, background: 'var(--coral-light)', borderRadius: 4 }}>
+                    🎮 Kinesthetic: {preview.interactiveHtml ? `${Math.round(preview.interactiveHtml.length / 1024)}KB HTML` : 'Pending'}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -247,86 +266,30 @@ export default function UploadAssignment() {
             </div>
           )}
 
-          {/* Learning style modality breakdown */}
-          {preview && !preview.error && (
-            <div style={{ marginTop: 12, fontSize: 12 }}>
-              <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13 }}>
-                Learning modalities for {previewStudentData?.name}
-                {previewStudentData?.learningStyles && (
-                  <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>
-                    {' '}— prefers {previewStudentData.learningStyles.join(', ')}
-                  </span>
-                )}
-              </div>
+          {/* Cloudinary image preview */}
+          <div style={{
+            marginTop: 12, background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
+            padding: 12, fontSize: 12, color: 'var(--teal-dark)',
+          }}>
+            {preview?.imageUrls?.neutral ? (
+              <img src={preview.imageUrls.neutral} alt="Character visual" style={{ maxWidth: '100%', borderRadius: 6 }} />
+            ) : (
+              <>📷 Cloudinary — themed character image will load here
+              {preview?.cloudinaryPrompt && ` (${preview.cloudinaryPrompt})`}</>
+            )}
+          </div>
 
-              {/* Visual — Cloudinary image */}
-              <div style={{
-                marginBottom: 8, background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
-                padding: 10, color: 'var(--teal-dark)',
-              }}>
-                <strong>🎨 Visual:</strong>{' '}
-                {preview.imageUrl ? (
-                  <div style={{ marginTop: 6 }}>
-                    <img src={preview.imageUrl} alt="Lesson visual" style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }} />
-                  </div>
-                ) : (
-                  <>
-                    {preview.cloudinaryPrompt || 'Character-themed illustration'}
-                    {preview.imageStatus ? ` — ${preview.imageStatus}` : ''}
-                  </>
-                )}
-              </div>
-
-              {/* Auditory — ElevenLabs */}
-              <div style={{
-                marginBottom: 8, background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
-                padding: 10, color: 'var(--blue-dark)',
-              }}>
-                <strong>🔊 Auditory:</strong>{' '}
-                {preview.audioUrl ? (
-                  <div style={{ marginTop: 6 }}>
-                    <audio controls src={preview.audioUrl} style={{ width: '100%' }}>Audio</audio>
-                  </div>
-                ) : preview.elevenLabsScript ? (
-                  <div style={{ marginTop: 4, fontStyle: 'italic' }}>"{preview.elevenLabsScript.slice(0, 120)}..."</div>
-                ) : (
-                  <>Narration script pending {preview.audioStatus ? `— ${preview.audioStatus}` : ''}</>
-                )}
-              </div>
-
-              {/* Reading — chat context */}
-              <div style={{
-                marginBottom: 8, background: 'var(--bg)', borderRadius: 'var(--radius-sm)',
-                padding: 10, border: '1px solid var(--border-md)',
-              }}>
-                <strong>📖 Reading:</strong>{' '}
-                {preview.chatContext ? (
-                  <div style={{ marginTop: 4 }}>{preview.chatContext}</div>
-                ) : (
-                  'Text-based lesson with LLM chat tutor'
-                )}
-              </div>
-
-              {/* Kinesthetic — interactive */}
-              <div style={{
-                marginBottom: 8, background: 'var(--purple-light)', borderRadius: 'var(--radius-sm)',
-                padding: 10, color: 'var(--purple-dark)',
-              }}>
-                <strong>🖐️ Kinesthetic:</strong>{' '}
-                {preview.interactiveHtml ? (
-                  <div style={{ marginTop: 4 }}>Interactive HTML lesson ready ({preview.interactiveHtml.length} chars)</div>
-                ) : preview.interactivePlan?.length > 0 ? (
-                  <div style={{ marginTop: 4 }}>
-                    {preview.interactivePlan.map((step, i) => (
-                      <div key={i}>{i + 1}. {step.instruction}</div>
-                    ))}
-                  </div>
-                ) : (
-                  'Interactive content will be generated'
-                )}
-              </div>
-            </div>
-          )}
+          {/* ElevenLabs audio preview */}
+          <div style={{
+            marginTop: 8, background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
+            padding: 12, fontSize: 12, color: 'var(--blue-dark)',
+          }}>
+            {preview?.audioUrl ? (
+              <audio controls src={preview.audioUrl} style={{ width: '100%' }} />
+            ) : (
+              <>🔊 ElevenLabs — narration audio will auto-play in auditory mode</>
+            )}
+          </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleSubmit} disabled={loading}>
@@ -341,6 +304,89 @@ export default function UploadAssignment() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Published Assignments — tracking section */}
+      <div style={{ marginTop: 8 }}>
+        <div className="page-header" style={{ marginBottom: 0 }}>
+          <div>
+            <div className="page-title" style={{ fontSize: 16 }}>Published Assignments</div>
+            <div className="page-sub">Assignments that have been assigned to students</div>
+          </div>
+        </div>
+
+        {PUBLISHED_ASSIGNMENTS.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+            No published assignments yet. Create and approve a lesson above to publish it.
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: 12 }}>
+            {PUBLISHED_ASSIGNMENTS.map(assignment => {
+              const completedCount = Object.values(assignment.studentStatus).filter(s => s.status === 'completed').length;
+              const inProgressCount = Object.values(assignment.studentStatus).filter(s => s.status === 'in-progress').length;
+              const notStartedCount = Object.values(assignment.studentStatus).filter(s => s.status === 'not-started').length;
+              const totalCount = assignment.assignedTo.length;
+              const progressPct = Math.round((completedCount / totalCount) * 100);
+
+              return (
+                <div key={assignment.id} className="card">
+                  <div className="row-between" style={{ marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: 14 }}>{assignment.title}</div>
+                      <div className="row" style={{ gap: 6, marginTop: 4 }}>
+                        <Badge variant="blue">{assignment.subject}</Badge>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          Published {assignment.publishedDate} · Due {assignment.dueDate}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 12, fontWeight: 500 }}>{completedCount}/{totalCount} completed</div>
+                      <ProgressBar pct={progressPct} variant="teal" />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 11 }}>
+                    <Badge variant="teal">{completedCount} completed</Badge>
+                    <Badge variant="amber">{inProgressCount} in progress</Badge>
+                    <Badge variant="gray">{notStartedCount} not started</Badge>
+                  </div>
+
+                  {/* Per-student status */}
+                  <div style={{ borderTop: '0.5px solid var(--border)' }}>
+                    {assignment.assignedTo.map(studentId => {
+                      const student = STUDENTS.find(s => s.id === studentId);
+                      const status = assignment.studentStatus[studentId];
+                      if (!student || !status) return null;
+
+                      const statusVariant = status.status === 'completed' ? 'teal'
+                        : status.status === 'in-progress' ? 'amber' : 'gray';
+                      const statusText = status.status === 'completed' ? 'Completed'
+                        : status.status === 'in-progress' ? 'In Progress' : 'Not Started';
+
+                      return (
+                        <div key={studentId} style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '8px 4px', borderBottom: '0.5px solid var(--border)',
+                        }}>
+                          <Avatar
+                            initials={student.initials}
+                            bg={student.avatarColor.bg}
+                            color={student.avatarColor.text}
+                            size={28}
+                          />
+                          <span style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>{student.name}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{status.adaptedMode}</span>
+                          <Badge variant={statusVariant}>{statusText}</Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

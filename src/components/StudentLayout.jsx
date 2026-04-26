@@ -65,6 +65,14 @@ export default function StudentLayout() {
                 <div style={{ fontSize: 13, fontWeight: 500 }}>{studentName}</div>
               </div>
               <div
+                style={{ padding: '10px 14px', fontSize: 13, cursor: 'pointer', transition: 'background 0.1s' }}
+                onClick={() => { setShowMenu(false); navigate('/student/settings'); }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                Settings
+              </div>
+              <div
                 style={{ padding: '10px 14px', fontSize: 13, color: '#DC2626', cursor: 'pointer', transition: 'background 0.1s' }}
                 onClick={logout}
                 onMouseEnter={e => e.currentTarget.style.background = '#FEF2F2'}
