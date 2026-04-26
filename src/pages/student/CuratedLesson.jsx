@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAssignment, getStudent } from '../../lib/mockData';
 import { useFrustration } from '../../lib/useFrustration';
@@ -52,21 +52,26 @@ export default function CuratedLesson() {
 
   const question = questions[qIndex];
 
-  const onFrustrationTriggered = useCallback((score) => {
-    console.log('Frustration threshold crossed:', score);
-    navigate('/student/reframe', {
-      state: {
-        question,
-        studentProfile: STUDENT,
-        wrongAttempts: frustration.wrongAttempts,
-        assignmentId,
-        qIndex,
-        studentId: STUDENT.id,
-      },
-    });
-  }, [navigate, question, assignmentId, qIndex, frustration.wrongAttempts]);
+  const frustrationCallbackRef = useRef(null);
+  const frustration = useFrustration({
+    onFrustrationTriggered: (score) => frustrationCallbackRef.current?.(score),
+  });
 
-  const frustration = useFrustration({ onFrustrationTriggered });
+  useEffect(() => {
+    frustrationCallbackRef.current = (score) => {
+      console.log('Frustration threshold crossed:', score);
+      navigate('/student/reframe', {
+        state: {
+          question,
+          studentProfile: STUDENT,
+          wrongAttempts: frustration.wrongAttempts,
+          assignmentId,
+          qIndex,
+          studentId: STUDENT.id,
+        },
+      });
+    };
+  }, [navigate, question, assignmentId, qIndex, frustration.wrongAttempts]);
 
   const imageMap = adaptedVersion?.imageUrls || {};
   const visualImage =
