@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getStudent } from '../../lib/mockData';
 import { Alert } from '../../components/UI';
-import { generateReframe } from '../../lib/geminiClient';
+import { getReframe } from '../../lib/gemmaApi';
+import { useLessonContext } from '../../lib/LessonContext';
 
 const STUDENT = getStudent('jamie');
 
-// Fallback content when Gemma is unavailable
 const FALLBACK = {
   steps: [
     { label: 'Step 1 — look at the bottom numbers', content: '³⁄₈ + ²⁄₈ — are the bottom numbers the same? Yes!' },
@@ -24,11 +24,30 @@ export default function AutoReframe() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { question, studentProfile, wrongAttempts, assignmentId, qIndex, studentId } = state || {};
+  const { getAdaptedVersion } = useLessonContext();
 
   const [selected, setSelected]   = useState(null);
   const [reframeData, setReframeData] = useState(null);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState(null);
+
+  // Load adapted lesson media from context or localStorage
+  const [adaptedMedia, setAdaptedMedia] = useState(null);
+  useEffect(() => {
+    const sid = studentId || STUDENT.id;
+    const fromContext = assignmentId ? getAdaptedVersion(assignmentId, sid) : null;
+    if (fromContext) {
+      setAdaptedMedia(fromContext);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem('spectra_adapted_lesson');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed[sid]) setAdaptedMedia(parsed[sid]);
+      }
+    } catch { /* ignore */ }
+  }, [assignmentId, studentId, getAdaptedVersion]);
 
   useEffect(() => {
     if (!question) return;
@@ -45,7 +64,7 @@ export default function AutoReframe() {
       frustrationTriggers: STUDENT.frustrationTriggers,
     };
 
-    generateReframe(question, profile, wrongAttempts || 2)
+    getReframe({ question, studentProfile: profile, wrongAttempts: wrongAttempts || 2 })
       .then(data => {
         if (!cancelled) setReframeData(data);
       })
@@ -115,12 +134,21 @@ export default function AutoReframe() {
         <div className="card">
           <div className="char-bubble">{STUDENT.characters[0]} is here to help! 💙</div>
 
-          {/* Visual scaffold */}
+          {/* Visual scaffold — show real Cloudinary image when available */}
           <div style={{
             background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
             padding: 12, fontSize: 12, color: 'var(--teal-dark)', marginBottom: 14,
+            textAlign: 'center',
           }}>
-            📷 Cloudinary — step-by-step visual with pizza slices (simpler version)
+            {adaptedMedia?.imageUrl ? (
+              <img
+                src={adaptedMedia.imageUrls?.supportive || adaptedMedia.imageUrl}
+                alt={`${(studentProfile || STUDENT).characters?.[0] || 'Character'} reframe visual`}
+                style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }}
+              />
+            ) : (
+              <>📷 Cloudinary — step-by-step visual with pizza slices (simpler version)</>
+            )}
           </div>
 
           {/* Steps */}
@@ -172,12 +200,21 @@ export default function AutoReframe() {
         Ms. Rivera has been quietly notified and may check in soon. Keep going — you're doing great!
       </Alert>
 
-      {/* ElevenLabs audio note */}
+      {/* ElevenLabs audio — play real narration when available */}
       <div style={{
         background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
         padding: 10, fontSize: 12, color: 'var(--blue-dark)',
       }}>
-        🔊 ElevenLabs — reading the steps aloud now to support auditory processing
+        {adaptedMedia?.audioUrl ? (
+          <div>
+            <div style={{ marginBottom: 6 }}>🔊 ElevenLabs — reading the steps aloud</div>
+            <audio controls src={adaptedMedia.audioUrl} style={{ width: '100%' }}>
+              Your browser does not support audio playback.
+            </audio>
+          </div>
+        ) : (
+          <>🔊 ElevenLabs — reading the steps aloud now to support auditory processing</>
+        )}
       </div>
 
     </div>

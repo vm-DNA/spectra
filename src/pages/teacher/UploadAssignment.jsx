@@ -42,6 +42,7 @@ export default function UploadAssignment() {
         grade: s.grade,
         learningStyles: s.learningStyles,
         characters: s.characters,
+        sensoryPrefs: s.sensoryPrefs,
         frustrationTriggers: s.frustrationTriggers,
       }));
 
