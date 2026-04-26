@@ -48,15 +48,24 @@ Subject: ${subject}
 Original worksheet content:
 ${rawContent}
 
-Rewrite this lesson using the student's favorite characters. Keep the language appropriate for ${student.grade} level. Avoid frustration triggers (${student.frustrationTriggers.join(', ')}). Be encouraging and warm in tone. Generate 3-5 quiz questions using the character theme.
+Rewrite this lesson using the student's favorite characters. Keep the language appropriate for ${student.grade} level. Avoid frustration triggers (${student.frustrationTriggers.join(', ')}). Respect sensory preferences (${(student.sensoryPrefs || []).join(', ')}). Be encouraging and warm in tone. Generate 3-5 quiz questions using the character theme.
+
+Based on the student's learning style, emphasize:
+- Visual: detailed image description, minimal text
+- Auditory: warm conversational narration script
+- Reading: rich text content with key vocabulary
+- Kinesthetic: interactive HTML/CSS/JS snippet for hands-on learning
 
 Return ONLY valid JSON with this exact structure (no markdown code fences):
 {
   "adaptedText": "lesson content rewritten using student's characters",
   "formula": "key formula or null",
   "hint": "helpful hint using character theme",
-  "cloudinaryPrompt": "description for themed illustration",
-  "elevenLabsScript": "text to read aloud for auditory learners",
+  "cloudinaryPrompt": "description for themed illustration featuring the character",
+  "elevenLabsScript": "warm narration text as if the character is talking to the student",
+  "interactiveHtml": "self-contained HTML with inline CSS/JS for interactive lesson (for kinesthetic learners)",
+  "chatContext": "key vocabulary and concepts for the chat tutor to reference",
+  "interactivePlan": [{"step": "step_name", "instruction": "what to do"}],
   "questions": [
     {
       "id": "q1",

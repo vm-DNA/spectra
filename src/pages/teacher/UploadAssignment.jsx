@@ -42,6 +42,7 @@ export default function UploadAssignment() {
         grade: s.grade,
         learningStyles: s.learningStyles,
         characters: s.characters,
+        sensoryPrefs: s.sensoryPrefs,
         frustrationTriggers: s.frustrationTriggers,
       }));
 
@@ -246,48 +247,86 @@ export default function UploadAssignment() {
             </div>
           )}
 
-          {/* Placeholder for Cloudinary image */}
-          <div style={{
-            marginTop: 12, background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
-            padding: 12, fontSize: 12, color: 'var(--teal-dark)',
-          }}>
-            {preview?.imageUrl ? (
-              <div>
-                <div style={{ marginBottom: 8 }}>📷 Cloudinary image ready</div>
-                <img
-                  src={preview.imageUrl}
-                  alt="Lesson visual"
-                  style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }}
-                />
+          {/* Learning style modality breakdown */}
+          {preview && !preview.error && (
+            <div style={{ marginTop: 12, fontSize: 12 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13 }}>
+                Learning modalities for {previewStudentData?.name}
+                {previewStudentData?.learningStyles && (
+                  <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>
+                    {' '}— prefers {previewStudentData.learningStyles.join(', ')}
+                  </span>
+                )}
               </div>
-            ) : (
-              <>
-                📷 Cloudinary image pending
-                {preview?.cloudinaryPrompt && ` (${preview.cloudinaryPrompt})`}
-                {preview?.imageStatus ? ` — ${preview.imageStatus}` : ''}
-              </>
-            )}
-          </div>
 
-          {/* ElevenLabs audio */}
-          <div style={{
-            marginTop: 8, background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
-            padding: 12, fontSize: 12, color: 'var(--blue-dark)',
-          }}>
-            {preview?.audioUrl ? (
-              <div>
-                <div style={{ marginBottom: 8 }}>🔊 ElevenLabs narration ready</div>
-                <audio controls src={preview.audioUrl} style={{ width: '100%' }}>
-                  Your browser does not support audio playback.
-                </audio>
+              {/* Visual — Cloudinary image */}
+              <div style={{
+                marginBottom: 8, background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
+                padding: 10, color: 'var(--teal-dark)',
+              }}>
+                <strong>🎨 Visual:</strong>{' '}
+                {preview.imageUrl ? (
+                  <div style={{ marginTop: 6 }}>
+                    <img src={preview.imageUrl} alt="Lesson visual" style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }} />
+                  </div>
+                ) : (
+                  <>
+                    {preview.cloudinaryPrompt || 'Character-themed illustration'}
+                    {preview.imageStatus ? ` — ${preview.imageStatus}` : ''}
+                  </>
+                )}
               </div>
-            ) : (
-              <>
-                🔊 ElevenLabs narration pending
-                {preview?.audioStatus ? ` — ${preview.audioStatus}` : ''}
-              </>
-            )}
-          </div>
+
+              {/* Auditory — ElevenLabs */}
+              <div style={{
+                marginBottom: 8, background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
+                padding: 10, color: 'var(--blue-dark)',
+              }}>
+                <strong>🔊 Auditory:</strong>{' '}
+                {preview.audioUrl ? (
+                  <div style={{ marginTop: 6 }}>
+                    <audio controls src={preview.audioUrl} style={{ width: '100%' }}>Audio</audio>
+                  </div>
+                ) : preview.elevenLabsScript ? (
+                  <div style={{ marginTop: 4, fontStyle: 'italic' }}>"{preview.elevenLabsScript.slice(0, 120)}..."</div>
+                ) : (
+                  <>Narration script pending {preview.audioStatus ? `— ${preview.audioStatus}` : ''}</>
+                )}
+              </div>
+
+              {/* Reading — chat context */}
+              <div style={{
+                marginBottom: 8, background: 'var(--bg)', borderRadius: 'var(--radius-sm)',
+                padding: 10, border: '1px solid var(--border-md)',
+              }}>
+                <strong>📖 Reading:</strong>{' '}
+                {preview.chatContext ? (
+                  <div style={{ marginTop: 4 }}>{preview.chatContext}</div>
+                ) : (
+                  'Text-based lesson with LLM chat tutor'
+                )}
+              </div>
+
+              {/* Kinesthetic — interactive */}
+              <div style={{
+                marginBottom: 8, background: 'var(--purple-light)', borderRadius: 'var(--radius-sm)',
+                padding: 10, color: 'var(--purple-dark)',
+              }}>
+                <strong>🖐️ Kinesthetic:</strong>{' '}
+                {preview.interactiveHtml ? (
+                  <div style={{ marginTop: 4 }}>Interactive HTML lesson ready ({preview.interactiveHtml.length} chars)</div>
+                ) : preview.interactivePlan?.length > 0 ? (
+                  <div style={{ marginTop: 4 }}>
+                    {preview.interactivePlan.map((step, i) => (
+                      <div key={i}>{i + 1}. {step.instruction}</div>
+                    ))}
+                  </div>
+                ) : (
+                  'Interactive content will be generated'
+                )}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleSubmit} disabled={loading}>

@@ -80,7 +80,7 @@ function inferModalityPlan(student) {
   if (styles.some(s => s.includes('read'))) {
     modalityPlan.supports.push('text');
   }
-  if (styles.some(s => s.includes('kinesthetic') || s.includes('kinethistic'))) {
+  if (styles.some(s => s.includes('kinesthetic') || s.includes('kinethistic') || s.includes('tactile'))) {
     modalityPlan.supports.push('interactive');
   }
 
@@ -130,6 +130,8 @@ function fallbackAdaptation(student, subject, reason) {
       { step: 'solve_one_piece', instruction: 'Answer one small piece at a time.' },
       { step: 'celebrate', instruction: 'Celebrate progress and continue.' },
     ],
+    interactiveHtml: `<!DOCTYPE html><html><head><style>body{font-family:sans-serif;text-align:center;padding:20px;background:#f0fdf4}h2{color:#166534}.btn{padding:12px 24px;margin:8px;border:none;border-radius:8px;font-size:16px;cursor:pointer;background:#1D9E75;color:white}.btn:hover{opacity:0.9}#result{margin-top:16px;font-size:18px;font-weight:bold}</style></head><body><h2>${character} wants to practice ${subject}!</h2><p>Click the correct answer:</p><div id="options"></div><div id="result"></div><script>var q={text:"What is 1 + 1?",options:["1","2","3"],correct:1};document.querySelector("h2").textContent="${character} wants to practice ${subject}!";var el=document.getElementById("options");q.options.forEach(function(opt,i){var b=document.createElement("button");b.className="btn";b.textContent=opt;b.onclick=function(){document.getElementById("result").textContent=i===q.correct?"Correct! Great job!":"Try again!";document.getElementById("result").style.color=i===q.correct?"#166534":"#dc2626"};el.appendChild(b)})</script></body></html>`,
+    chatContext: `This lesson covers ${subject}. We are practicing basic concepts one step at a time with ${character}.`,
     questions: [
       normalizeQuestion(
         {
@@ -237,6 +239,11 @@ function normalizeAdaptation(raw, student, subject) {
           instruction: asText(step?.instruction, 'Complete this mini-step before moving on.'),
         }))
       : [],
+    interactiveHtml: asText(raw.interactiveHtml, ''),
+    chatContext: asText(
+      raw.chatContext,
+      `This lesson covers ${subject}. The key concept is explained step by step using examples the student loves.`
+    ),
     questions:
       normalizedQuestions.length > 0
         ? normalizedQuestions
@@ -340,8 +347,8 @@ Generate a personalized lesson from this worksheet. Return valid JSON with this 
   "adaptedText": "The lesson content rewritten using the student's favorite characters and appropriate reading level",
   "formula": "The key formula or concept displayed prominently (if applicable, otherwise null)",
   "hint": "A helpful hint using the student's character theme",
-  "cloudinaryPrompt": "A description for generating a themed illustration",
-  "elevenLabsScript": "The text that should be read aloud for auditory learners",
+  "cloudinaryPrompt": "A description for generating a themed illustration featuring the student's favorite character doing the lesson activity",
+  "elevenLabsScript": "The text that should be read aloud for auditory learners — warm, conversational narration using character references",
   "modalityPlan": {
     "primary": "visual|auditory|chat",
     "supports": ["image", "audio", "text", "interactive"]
@@ -349,6 +356,8 @@ Generate a personalized lesson from this worksheet. Return valid JSON with this 
   "interactivePlan": [
     { "step": "tap_to_start", "instruction": "short instruction for a low-stimulation interactive step" }
   ],
+  "interactiveHtml": "A self-contained HTML snippet (with inline CSS and JS) that creates a simple interactive lesson. Use the student's favorite character. The HTML should let the student click, drag, or tap to solve problems. Keep it accessible and low-stimulation. Must be a single string of valid HTML that can be rendered in an iframe. Include inline styles, no external dependencies. Example: clickable buttons that count items, drag-and-drop matching, or interactive number lines.",
+  "chatContext": "A short paragraph of context about the lesson that a chat tutor can reference when the student asks questions in Read mode. Include key vocabulary terms, the main concept being taught, and how to explain it simply.",
   "confidence": 0.84,
   "questions": [
     {
@@ -367,14 +376,16 @@ Rules:
 - Break concepts into small, clear steps
 - Use simple language appropriate for their grade level
 - Avoid their frustration triggers (e.g., if "too many words" is a trigger, keep text minimal)
+- Respect their sensory preferences (e.g., if "Avoids loud sounds" minimize audio cues, if "Minimal text" keep text very short)
 - Generate 3-5 questions based on the worksheet content
 - Make it encouraging and warm in tone
-- Respect modality intent:
-  - visual: static, calm visuals with minimal clutter
-  - auditory: concise narration script with conversational tone
-  - reading: text-first wording, no visual dependency, include terms that can be bolded/highlighted
-  - kinesthetic: low-stimulation interactive mini-steps
-- Include personalized references from favorite characters and sensory preferences
+- Theme EVERYTHING to the student's favorite character(s) — the character should appear in the story, questions, hints, interactive elements, and narration
+- Respect modality intent based on learning style:
+  - visual: generate a detailed cloudinaryPrompt describing a colorful, static image of the character doing the lesson activity. Keep text minimal. Focus on imagery.
+  - auditory: generate a warm, friendly elevenLabsScript as if the character is talking directly to the student. Conversational tone. Include all lesson content in the narration.
+  - reading: generate rich adaptedText with the full lesson. Include a chatContext paragraph with vocabulary and key concepts. Use clear paragraph structure.
+  - kinesthetic: generate interactiveHtml — a self-contained HTML/CSS/JS snippet where the student can click buttons, drag items, or interact to solve the problem. Theme it to the character. Keep it simple and accessible. Also generate interactivePlan steps.
+- The interactiveHtml MUST be a complete, self-contained HTML document fragment with inline styles. It should work when inserted into an iframe with no external dependencies.
 - Return only valid JSON, with no markdown code block`;
 
     try {

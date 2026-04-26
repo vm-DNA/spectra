@@ -223,8 +223,8 @@ export default function CuratedLesson() {
           </p>
         )}
 
-        {/* Cloudinary visual modes */}
-        {(mode === 'Visual' || mode === 'Kinesthetic') && (
+        {/* ── VISUAL MODE: Cloudinary themed images ── */}
+        {mode === 'Visual' && (
           <div style={{
             background: 'var(--purple-light)', borderRadius: 'var(--radius-sm)',
             padding: 12, textAlign: 'center', fontSize: 12, color: 'var(--purple-dark)',
@@ -237,58 +237,145 @@ export default function CuratedLesson() {
                 style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }}
               />
             ) : (
-              <>📷 Cloudinary themed image — {STUDENT.characters[0]} illustration here</>
+              <div style={{ padding: 24 }}>
+                <div style={{ fontSize: 48, marginBottom: 8 }}>🎨</div>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>Visual Learning Mode</div>
+                <div>{STUDENT.characters[0]} themed illustration</div>
+                {adaptedVersion?.cloudinaryPrompt && (
+                  <div style={{ marginTop: 8, fontStyle: 'italic', opacity: 0.8 }}>
+                    {adaptedVersion.cloudinaryPrompt}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
 
-        {/* ElevenLabs audio placeholder */}
+        {/* ── LISTEN MODE: ElevenLabs audio + voice interaction ── */}
         {mode === 'Listen' && (
           <div style={{
             background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
-            padding: 12, textAlign: 'center', fontSize: 12, color: 'var(--blue-dark)',
+            padding: 12, fontSize: 12, color: 'var(--blue-dark)',
             marginBottom: 12,
           }}>
+            <div style={{ textAlign: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 32, marginBottom: 4 }}>🔊</div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>Auditory Learning Mode</div>
+            </div>
             {adaptedVersion?.audioUrl ? (
               <audio controls autoPlay src={adaptedVersion.audioUrl} style={{ width: '100%' }}>
                 Your browser does not support audio playback.
               </audio>
+            ) : adaptedVersion?.elevenLabsScript ? (
+              <div style={{ padding: 8, background: 'rgba(255,255,255,0.5)', borderRadius: 6, fontSize: 13, lineHeight: 1.6 }}>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>📝 Narration script:</div>
+                {adaptedVersion.elevenLabsScript}
+              </div>
             ) : (
-              <>🔊 ElevenLabs — narrating question now...</>
+              <div style={{ textAlign: 'center' }}>Narration audio will play here when ElevenLabs is configured</div>
             )}
-            <div style={{ marginTop: 10, textAlign: 'left' }}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>Talk to tutor</div>
+            <div style={{ marginTop: 12, textAlign: 'left', borderTop: '1px solid var(--border-md)', paddingTop: 10 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>💬 Talk to {STUDENT.characters[0]} tutor</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   className="input"
                   value={tutorInput}
                   onChange={e => setTutorInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleTutorAsk()}
                   placeholder="Ask for help in your own words..."
                 />
                 <button className="btn btn-primary btn-sm" onClick={handleTutorAsk} disabled={chatLoading}>
-                  {chatLoading ? 'Asking...' : 'Ask'}
+                  {chatLoading ? '...' : 'Ask'}
                 </button>
               </div>
               {tutorReply && (
-                <div style={{ marginTop: 8, fontSize: 12 }}>
-                  {tutorReply}
+                <div style={{ marginTop: 8, padding: 8, background: 'rgba(255,255,255,0.5)', borderRadius: 6, fontSize: 13 }}>
+                  <strong>{STUDENT.characters[0]}:</strong> {tutorReply}
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {mode === 'Kinesthetic' && adaptedVersion?.interactivePlan?.length > 0 && (
+        {/* ── READ MODE: Rich text + chat with LLM tutor ── */}
+        {mode === 'Read' && (
           <div style={{
-            background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
-            padding: 12, marginBottom: 12, fontSize: 12, color: 'var(--teal-dark)',
+            background: 'var(--bg)', borderRadius: 'var(--radius-sm)',
+            padding: 12, marginBottom: 12,
           }}>
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>Interactive mini-steps</div>
-            {adaptedVersion.interactivePlan.map((step, idx) => (
-              <div key={step.step || idx} style={{ marginBottom: 4 }}>
-                {idx + 1}. {step.instruction}
+            <div style={{ fontSize: 14, marginBottom: 8 }}>
+              <span style={{ fontSize: 20, marginRight: 6 }}>📖</span>
+              <strong>Reading Mode</strong>
+            </div>
+            {adaptedVersion?.chatContext && (
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, padding: 8, background: 'var(--purple-light)', borderRadius: 6 }}>
+                <strong>Key concepts:</strong> {adaptedVersion.chatContext}
               </div>
-            ))}
+            )}
+            <div style={{ marginTop: 10, borderTop: '1px solid var(--border-md)', paddingTop: 10 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 13 }}>💬 Chat with {STUDENT.characters[0]} — ask anything about this lesson</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="input"
+                  value={tutorInput}
+                  onChange={e => setTutorInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleTutorAsk()}
+                  placeholder={`Ask ${STUDENT.characters[0]} to explain...`}
+                />
+                <button className="btn btn-primary btn-sm" onClick={handleTutorAsk} disabled={chatLoading}>
+                  {chatLoading ? '...' : 'Ask'}
+                </button>
+              </div>
+              {tutorReply && (
+                <div style={{ marginTop: 8, padding: 10, background: 'var(--teal-light)', borderRadius: 6, fontSize: 13, lineHeight: 1.6 }}>
+                  <strong>{STUDENT.characters[0]}:</strong> {tutorReply}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── KINESTHETIC MODE: Interactive HTML lesson ── */}
+        {mode === 'Kinesthetic' && (
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 14, marginBottom: 8 }}>
+              <span style={{ fontSize: 20, marginRight: 6 }}>🖐️</span>
+              <strong>Interactive Mode</strong> — click and interact to learn!
+            </div>
+            {adaptedVersion?.interactiveHtml ? (
+              <iframe
+                title="Interactive lesson"
+                srcDoc={adaptedVersion.interactiveHtml}
+                sandbox="allow-scripts"
+                style={{
+                  width: '100%',
+                  minHeight: 320,
+                  border: '2px solid var(--purple)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'white',
+                }}
+              />
+            ) : adaptedVersion?.interactivePlan?.length > 0 ? (
+              <div style={{
+                background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
+                padding: 12, fontSize: 12, color: 'var(--teal-dark)',
+              }}>
+                <div style={{ fontWeight: 600, marginBottom: 6 }}>Interactive mini-steps</div>
+                {adaptedVersion.interactivePlan.map((step, idx) => (
+                  <div key={step.step || idx} style={{ marginBottom: 4 }}>
+                    {idx + 1}. {step.instruction}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
+                padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--teal-dark)',
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🎮</div>
+                Interactive content will appear here when Gemma generates it
+              </div>
+            )}
           </div>
         )}
 

@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getStudent } from '../../lib/mockData';
 import { Alert } from '../../components/UI';
-import { generateReframe } from '../../lib/geminiClient';
+import { getReframe, tutorChat } from '../../lib/gemmaApi';
 
 const STUDENT = getStudent('jamie');
 
-// Fallback content when Gemma is unavailable
 const FALLBACK = {
   steps: [
     { label: 'Step 1 — look at the bottom numbers', content: '³⁄₈ + ²⁄₈ — are the bottom numbers the same? Yes!' },
@@ -23,12 +22,23 @@ const FALLBACK = {
 export default function AutoReframe() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const { question, studentProfile, wrongAttempts, assignmentId, qIndex, studentId } = state || {};
+  const { question, studentProfile, wrongAttempts } = state || {};
 
-  const [selected, setSelected]   = useState(null);
+  const [selected, setSelected]       = useState(null);
   const [reframeData, setReframeData] = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState(null);
+  const [tutorInput, setTutorInput]   = useState('');
+  const [tutorReply, setTutorReply]   = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+
+  const profile = studentProfile || {
+    name: STUDENT.name,
+    grade: STUDENT.grade,
+    characters: STUDENT.characters,
+    learningStyles: STUDENT.learningStyles,
+    frustrationTriggers: STUDENT.frustrationTriggers,
+  };
 
   useEffect(() => {
     if (!question) return;
@@ -37,15 +47,7 @@ export default function AutoReframe() {
     setLoading(true);
     setError(null);
 
-    const profile = studentProfile || {
-      name: STUDENT.name,
-      grade: STUDENT.grade,
-      characters: STUDENT.characters,
-      learningStyles: STUDENT.learningStyles,
-      frustrationTriggers: STUDENT.frustrationTriggers,
-    };
-
-    generateReframe(question, profile, wrongAttempts || 2)
+    getReframe({ question, studentProfile: profile, wrongAttempts: wrongAttempts || 2 })
       .then(data => {
         if (!cancelled) setReframeData(data);
       })
@@ -63,7 +65,6 @@ export default function AutoReframe() {
     return () => { cancelled = true; };
   }, [question]);
 
-  // Use Gemma data if available, otherwise fallback
   const data = reframeData || FALLBACK;
   const steps = data.steps || FALLBACK.steps;
   const simplified = data.simplifiedQuestion || FALLBACK.simplifiedQuestion;
@@ -75,6 +76,25 @@ export default function AutoReframe() {
       setTimeout(() => navigate('/student/complete'), 1200);
     }
   };
+
+  const handleTutorAsk = async () => {
+    if (!tutorInput.trim()) return;
+    setChatLoading(true);
+    try {
+      const response = await tutorChat({
+        message: tutorInput.trim(),
+        question: simplified,
+        studentProfile: profile,
+      });
+      setTutorReply(response.reply || '');
+    } catch (err) {
+      setTutorReply(err.message || 'Could not reach tutor right now.');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const character = profile.characters?.[0] || STUDENT.characters[0];
 
   return (
     <div className="stack" style={{ gap: 14 }}>
@@ -91,7 +111,7 @@ export default function AutoReframe() {
             Let's try it a different way!
           </div>
           <div style={{ fontSize: 12, color: 'var(--purple-dark)', opacity: 0.8, marginTop: 2 }}>
-            {STUDENT.characters[0]} has a trick to make this easier.
+            {character} has a trick to make this easier.
           </div>
         </div>
       </div>
@@ -100,7 +120,7 @@ export default function AutoReframe() {
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
           <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
           <div style={{ color: 'var(--text-muted)' }}>
-            {STUDENT.characters[0]} is thinking of a simpler way to explain this...
+            {character} is thinking of a simpler way to explain this...
           </div>
         </div>
       )}
@@ -113,14 +133,25 @@ export default function AutoReframe() {
 
       {!loading && (
         <div className="card">
-          <div className="char-bubble">{STUDENT.characters[0]} is here to help! 💙</div>
+          <div className="char-bubble">{character} is here to help! 💙</div>
 
-          {/* Visual scaffold */}
+          {/* Cloudinary visual scaffold */}
           <div style={{
             background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
             padding: 12, fontSize: 12, color: 'var(--teal-dark)', marginBottom: 14,
           }}>
-            📷 Cloudinary — step-by-step visual with pizza slices (simpler version)
+            {data.imageUrl ? (
+              <img
+                src={data.imageUrl}
+                alt={`${character} reframe visual`}
+                style={{ width: '100%', borderRadius: 8, border: '1px solid var(--border-md)' }}
+              />
+            ) : (
+              <div style={{ textAlign: 'center', padding: 8 }}>
+                <div style={{ fontSize: 24, marginBottom: 4 }}>🎨</div>
+                {character} visual — step-by-step breakdown
+              </div>
+            )}
           </div>
 
           {/* Steps */}
@@ -172,12 +203,40 @@ export default function AutoReframe() {
         Ms. Rivera has been quietly notified and may check in soon. Keep going — you're doing great!
       </Alert>
 
-      {/* ElevenLabs audio note */}
+      {/* ElevenLabs audio support */}
       <div style={{
         background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
-        padding: 10, fontSize: 12, color: 'var(--blue-dark)',
+        padding: 12, fontSize: 12, color: 'var(--blue-dark)',
       }}>
-        🔊 ElevenLabs — reading the steps aloud now to support auditory processing
+        {data.audioUrl ? (
+          <audio controls autoPlay src={data.audioUrl} style={{ width: '100%' }}>
+            Your browser does not support audio playback.
+          </audio>
+        ) : (
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            🔊 ElevenLabs — reading the steps aloud to support auditory processing
+          </div>
+        )}
+        <div style={{ marginTop: 8, borderTop: '1px solid var(--border-md)', paddingTop: 8 }}>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>💬 Need more help? Ask {character}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              className="input"
+              value={tutorInput}
+              onChange={e => setTutorInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleTutorAsk()}
+              placeholder={`Ask ${character} to explain differently...`}
+            />
+            <button className="btn btn-primary btn-sm" onClick={handleTutorAsk} disabled={chatLoading}>
+              {chatLoading ? '...' : 'Ask'}
+            </button>
+          </div>
+          {tutorReply && (
+            <div style={{ marginTop: 8, padding: 8, background: 'rgba(255,255,255,0.5)', borderRadius: 6, fontSize: 13 }}>
+              <strong>{character}:</strong> {tutorReply}
+            </div>
+          )}
+        </div>
       </div>
 
     </div>
