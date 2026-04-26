@@ -335,21 +335,35 @@ function getModalityInstructions(primaryStyle, student) {
   * Include CSS animations for engaging visual presentation`;
     case 'Auditory':
       return `AUDITORY LEARNER INSTRUCTIONS:
-- Focus on generating a FULL, detailed elevenLabsScript for text-to-speech
-- The elevenLabsScript should be a warm, conversational narration as if ${character} is talking directly to the student
-- Include ALL worksheet content and explanations in the narration — this is the PRIMARY learning channel
-- The narration should walk through each problem step by step
-- Make the narration 3-4 paragraphs, covering the full lesson
-- The student will listen and respond back via chat
-- Keep the adaptedText brief since they learn by listening`;
+- The elevenLabsScript is the PRIMARY learning channel — make it EXCEPTIONAL
+- Write a FULL, warm, engaging narration (4-6 paragraphs, 300+ words) as if ${character} is talking directly to ${student.name}
+- Structure the narration like a story:
+  * Greeting: "${character} welcomes ${student.name} to the lesson"
+  * Introduction: Character explains the topic using a fun, themed scenario
+  * Teaching: Walk through the FIRST problem step-by-step with character-themed examples
+  * Practice setup: Preview what the practice questions will cover
+  * Encouragement: Character gives a pep talk before the quiz
+- Include natural pauses (use "..." for breathing pauses)
+- Use the character's actual catchphrases and personality
+- Make it sound like a real conversation, NOT a textbook
+- The narration will be read aloud by ElevenLabs TTS
+- Keep adaptedText to just a brief overview (student learns by LISTENING, not reading)
+- Generate 5-8 questions with clear answer options for the voice quiz`;
     case 'Reading':
       return `READING LEARNER INSTRUCTIONS:
-- Focus on generating rich, detailed adaptedText with the full lesson explanation
-- Use ${character} as the narrator/guide throughout the text
-- Include step-by-step explanations of the concepts
-- Generate a comprehensive chatContext so the student can ask the tutor questions
-- Keep interactiveHtml and elevenLabsScript minimal
-- The student reads the text and selects answers to questions`;
+- The adaptedText is the PRIMARY learning channel — make it RICH and DETAILED
+- Write a FULL, story-driven lesson (500+ words) with ${character} as the narrator/guide:
+  * Opening: ${character} introduces the topic through a themed adventure/scenario
+  * Concept explanation: Clear, step-by-step breakdown of the math concept using ${character} examples
+  * Worked example: Walk through one complete problem with character-themed context
+  * Key rules/formulas: Highlighted in bold with character commentary
+  * Practice intro: ${character} encourages the student before the quiz
+- Use markdown-style formatting: **bold** for key terms, bullet points for steps
+- Include ${character}'s personality, catchphrases, and themed examples throughout
+- Make it feel like reading a fun ${character} story that teaches math
+- Generate a comprehensive chatContext so the AI tutor can answer follow-up questions about the lesson
+- Generate 5-8 questions with 4 options each — the student reads and selects answers
+- Keep interactiveHtml and elevenLabsScript minimal`;
     case 'Kinesthetic':
       return `KINESTHETIC LEARNER INSTRUCTIONS:
 - The interactiveHtml is the PRIMARY learning channel. It must TEACH the concept, not just quiz.
@@ -383,7 +397,7 @@ async function generateKinestheticHtmlWithClaude(rawText, subject, student) {
   }
 
   const character = (student.characters || ['the character'])[0];
-  const prompt = `You are building an interactive learning lesson for a special education student with autism.
+  const prompt = `You are building a HIGH-QUALITY interactive learning lesson for an elementary student.
 
 Student: ${student.name}, Grade: ${student.grade}
 Favorite character: ${character}
@@ -394,54 +408,68 @@ Frustration triggers: ${(student.frustrationTriggers || []).join(', ')}
 WORKSHEET CONTENT TO TEACH:
 ${rawText}
 
-Build a COMPLETE, standalone HTML document that TEACHES the student how to solve these problems through hands-on interaction. This is for a kinesthetic learner — they learn by DOING, not reading.
+Build a COMPLETE, standalone HTML document that TEACHES through hands-on interaction. Kinesthetic learner — they learn by DOING.
 
-REQUIREMENTS:
-1. VISUAL TEACHING SECTION (comes first):
-   - Animated fraction bar visualizations using SVG or CSS that show fractions being added
-   - For example: two bars side by side, colored segments representing numerator/denominator, then an animation showing them combining
-   - Step-by-step walkthrough of ONE example problem with animated transitions between steps
-   - Each step should have a "Next" button and smooth CSS transitions
+CRITICAL — THREE TABS REQUIRED:
 
-2. INTERACTIVE SLIDERS:
-   - Range sliders that let the student set numerator and denominator values
-   - As the student drags, a fraction bar or pie chart updates in real-time
-   - Labels showing the current fraction value
+📚 TAB 1: LEARN
+- Animated step-by-step walkthrough teaching the FIRST problem from the worksheet
+- Use CSS-animated fraction bars (colored div segments, not just text) that visually show:
+  * The two original fractions as colored bar segments
+  * An animation converting both to common denominator (bars subdivide)
+  * The final combined bar
+- Each step reveals with a "Next Step" button (CSS transition: opacity + translateY)
+- Character speech bubbles at each step with encouraging, themed dialogue
+- At least 4 animated steps with smooth transitions
 
-3. DRAG-AND-DROP PRACTICE:
-   - For each worksheet problem, show fraction pieces that the student can click/drag to combine
-   - Visual feedback when pieces are combined (color change, animation)
-   - Check answer button with immediate visual feedback (green glow for correct, gentle shake for incorrect)
+🎮 TAB 2: EXPLORE (Interactive Sandbox)
+- TWO fraction builders: each has a slider for numerator (0-12) and denominator (1-12)
+- As sliders change, a LIVE fraction bar visualization updates instantly (CSS width% change)
+- A "+ Add Fractions" button that:
+  * Animates finding the LCD
+  * Shows the conversion visually
+  * Displays the result as a new bar
+- "Craft a Fraction" challenge: show a target fraction bar, student adjusts sliders to match it
+- Visual feedback: green glow when matched, gentle shake when wrong
 
-4. SCORE TRACKING & PROGRESS:
-   - Progress bar at the top showing how many problems completed
-   - Score counter
-   - Celebration animation (confetti particles using CSS/JS) when all problems are completed
-   - Encouraging messages themed to ${character}
+⚔️ TAB 3: PRACTICE (Quiz)
+- ALL problems from the worksheet as sequential questions
+- Each question shows:
+  * The fraction problem text prominently
+  * A visual fraction bar representation of both fractions
+  * 4 answer options as large, clickable blocks styled to ${character}'s theme
+- Correct: green glow + score increase + particle burst animation
+- Wrong: red shake + "Try again!" text
+- XP/progress bar at top filling as problems are completed
+- Track wrong answers per question. After 3 wrong on SAME question:
+  window.parent.postMessage({type:'wrongAnswer',questionText:'<problem text>',wrongCount:3},'*');
+  window.parent.postMessage({type:'reframeNeeded',questionText:'<problem text>'},'*');
+- Confetti celebration when ALL questions answered correctly
 
-5. CHARACTER THEMING:
-   - Use ${character}'s color scheme and visual style throughout
-   - Character speech bubbles with encouraging messages at key moments
-   - ${character}-themed backgrounds and decorations
+CHARACTER THEMING for ${character}:
+- Use ${character}'s color scheme and visual style throughout
+- ${character} speech bubbles with encouraging messages between problems
+- Themed header, backgrounds, and progress indicators
+- Fun sound-effect-like text animations (e.g., "⛏ CORRECT!" for Minecraft)
 
 TECHNICAL REQUIREMENTS:
-- MUST be a complete HTML document with <!DOCTYPE html>, <html>, <head>, <body>
-- ALL CSS must be inline in a <style> tag (no external stylesheets)
-- ALL JavaScript must be inline in a <script> tag (no external libraries)
-- Must work inside an iframe with sandbox="allow-scripts"
-- Use CSS animations and transitions for smooth, engaging interactions
-- Mobile-friendly layout (flexbox/grid)
-- Minimum 400 lines of code — this should be a RICH, full interactive lesson
-- Use modern CSS (gradients, shadows, animations, transitions)
-- Make it colorful, engaging, and fun for a child
+- MUST be a complete HTML document with <!DOCTYPE html>
+- ALL CSS inline in <style>, ALL JS inline in <script>
+- Must work inside an iframe with sandbox="allow-scripts allow-same-origin"
+- Use CSS animations, transitions, gradients, shadows
+- Mobile-friendly flexbox/grid layout
+- Minimum 500 lines — this is a RICH, polished interactive lesson
+- NO external dependencies or libraries
+- All interactive elements must actually work (sliders, buttons, tabs, drag)
+- The fraction bar visualizations must use CSS width percentages to represent fractions accurately
 
-Return ONLY the complete HTML document. No markdown, no code fences, no explanation — just the raw HTML starting with <!DOCTYPE html>.`;
+Return ONLY the complete HTML. No markdown, no code fences.`;
 
   try {
     logAiDebug('claude_kinesthetic_start', { studentId: student.id, character });
     const message = await anthropicClient.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 16000,
+      max_tokens: 20000,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -469,7 +497,7 @@ async function generateVisualHtmlWithClaude(rawText, subject, student) {
   }
 
   const character = (student.characters || ['the character'])[0];
-  const prompt = `You are building a visually rich learning lesson for a special education student with autism.
+  const prompt = `You are building a HIGH-QUALITY visual learning lesson for an elementary student.
 
 Student: ${student.name}, Grade: ${student.grade}
 Favorite character: ${character}
@@ -480,49 +508,62 @@ Frustration triggers: ${(student.frustrationTriggers || []).join(', ')}
 WORKSHEET CONTENT TO TEACH:
 ${rawText}
 
-Build a COMPLETE, standalone HTML document that teaches using VISUAL elements. This student learns by SEEING images, diagrams, and colorful visual representations.
+Build a COMPLETE, standalone HTML document that teaches using VISUAL elements. Visual learner — they learn by SEEING.
+
+CRITICAL — IMAGES AS TEACHING OBJECTS (not decoration):
+Use <img> tags with src="CHARACTER_IMAGE_PLACEHOLDER" (replaced with real Cloudinary URLs). The images MUST be used AS the math teaching tool:
+
+- For addition (e.g., 2+3): Show 2 character images, a "+" sign, then 3 character images, "=" sign, then an answer input
+- For fractions (e.g., 4/5): Show 5 character images in a row, 4 colored/highlighted and 1 grayed out
+- For multiplication (e.g., 3x4): Show a 3x4 grid of character images
+- For fraction addition: Show first fraction as filled/empty character images, then second fraction, then the combined result with common denominator pieces
 
 REQUIREMENTS:
-1. CHARACTER IMAGES — use multiple <img> tags with src="CHARACTER_IMAGE_PLACEHOLDER" (this will be replaced with real Cloudinary URLs of ${character} images). Place images throughout the lesson:
-   - A large hero image at the top
-   - Images next to each problem to illustrate the concept (e.g., show groups of character images to represent multiplication: 3 x 4 = show 3 rows of 4 ${character} images)
-   - Use CSS to resize images appropriately (width: 60-120px for inline, 200px for hero)
-   - Position images using flexbox/grid layouts
+1. CHARACTER IMAGE MATH — at least 10-15 <img> tags with src="CHARACTER_IMAGE_PLACEHOLDER":
+   - Hero image in the header (width: 120px)
+   - Character images AS fraction pieces (width: 40-50px) — filled images = numerator, empty/dashed boxes = remaining denominator
+   - Character speech bubbles with themed dialogue (img next to text)
+   - Images in the step-by-step conversion showing LCD pieces
 
-2. VISUAL MATH DIAGRAMS:
-   - Use colored CSS blocks, circles, or bars to represent numbers visually
-   - For multiplication: show arrays/groups of colored blocks
-   - For fractions: show pie charts or bar segments
-   - Use bright, engaging colors
+2. STEP-BY-STEP VISUAL TEACHING for each problem:
+   - Show the original fractions using character images as pieces
+   - Colored step boxes showing: find LCD → convert → add numerators
+   - After conversion: show the LCD fraction visually (12 character images out of 15 slots, etc.)
+   - Use CSS flexbox to arrange image groups cleanly
 
-3. INTERACTIVE QUIZ:
-   - Each worksheet problem as a visual question card
-   - 4 clickable answer options styled as colorful buttons/cards
-   - Correct answer shows green glow + celebration
-   - Wrong answer shows gentle orange highlight + "Try again!"
-   - Track score and show progress
+3. INTERACTIVE QUIZ — one question at a time, progress dots:
+   - Show current problem with visual character image representation
+   - 4 clickable answer buttons (styled as colorful cards with hover effects)
+   - Correct: green border + "Correct! 🎉" message + auto-advance after 1.5s
+   - Wrong: orange shake + "Try again!" — track wrong attempts
+   - After 3 wrong on SAME question:
+     window.parent.postMessage({type:'wrongAnswer',questionText:'<problem>',wrongCount:3},'*');
+     window.parent.postMessage({type:'reframeNeeded',questionText:'<problem>'},'*');
+   - Progress dots at top (green=done, orange=current, gray=upcoming)
+   - Final score screen with all character images and confetti
 
-4. CHARACTER THEMING:
-   - ${character}-themed color scheme throughout
-   - Character speech bubbles with encouraging messages
-   - Fun header with character name
+4. ${character}-THEMED DESIGN:
+   - ${character}'s color scheme (e.g., SpongeBob = yellow/blue, Minecraft = green/brown, Paw Patrol = blue/red)
+   - Comic Sans or playful font
+   - Colorful backgrounds with character theming
+   - Fun animations (hover effects, bounce, slide-in)
 
 TECHNICAL REQUIREMENTS:
-- MUST be a complete HTML document with <!DOCTYPE html>, <html>, <head>, <body>
-- ALL CSS inline in <style> tag, ALL JS inline in <script> tag
-- Must work inside an iframe with sandbox="allow-scripts"
-- Use CSS animations and transitions
-- Mobile-friendly (flexbox/grid)
-- Minimum 200 lines — visually rich and fun for a child
-- Include MULTIPLE <img> tags with src="CHARACTER_IMAGE_PLACEHOLDER" — at least 4-6 images throughout the lesson
+- Complete HTML document with <!DOCTYPE html>
+- ALL CSS in <style>, ALL JS in <script>
+- Must work in iframe with sandbox="allow-scripts allow-same-origin"
+- CSS animations, transitions, gradients
+- Mobile-friendly flexbox layout
+- Minimum 400 lines — RICH, polished, visually stunning
+- NO external dependencies
 
-Return ONLY the complete HTML document. No markdown, no code fences — just raw HTML starting with <!DOCTYPE html>.`;
+Return ONLY the complete HTML. No markdown, no code fences.`;
 
   try {
     logAiDebug('claude_visual_start', { studentId: student.id, character });
     const message = await anthropicClient.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 12000,
+      max_tokens: 20000,
       messages: [{ role: 'user', content: prompt }],
     });
 
