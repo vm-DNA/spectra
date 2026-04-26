@@ -82,7 +82,8 @@ export default function DemoStudentView() {
         }
       }
       if (type === 'reframeNeeded' && questionText) {
-        const reframe = DEMO_REFRAMES[questionText];
+        const studentReframes = DEMO_REFRAMES[selectedStudent] || {};
+        const reframe = studentReframes[questionText];
         if (reframe) {
           setReframeData({ ...reframe, questionText });
           setReframeTriggered(true);
