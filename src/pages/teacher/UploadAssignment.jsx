@@ -6,6 +6,13 @@ import { useLessonContext } from '../../lib/LessonContext';
 
 const SUBJECTS = ['Math', 'Reading', 'Science', 'Social Skills', 'Writing'];
 
+const MODALITY_META = {
+  Visual:      { icon: '🖼️', label: 'Visual',      color: '#7C3AED', bg: '#F3F0FF' },
+  Auditory:    { icon: '🔊', label: 'Auditory',    color: '#0D9488', bg: '#E6FFFA' },
+  Reading:     { icon: '📖', label: 'Reading',     color: '#B45309', bg: '#FFF8E7' },
+  Kinesthetic: { icon: '🎮', label: 'Kinesthetic', color: '#DC2626', bg: '#FFF1F0' },
+};
+
 export default function UploadAssignment() {
   const [subject, setSubject]     = useState('Math');
   const [content, setContent]     = useState(ASSIGNMENTS[0].rawContent);
@@ -15,15 +22,28 @@ export default function UploadAssignment() {
   const [loading, setLoading]     = useState(false);
   const [file, setFile]           = useState(null);
   const [adaptedVersions, setAdaptedVersions] = useState(null);
-  const [previewStudent, setPreviewStudent]   = useState('jamie');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [generatingStudents, setGeneratingStudents] = useState({});
   const [error, setError]         = useState(null);
   const [approved, setApproved]   = useState(false);
 
   const { saveLesson } = useLessonContext();
 
+  const targetStudents = assignTo === 'all'
+    ? STUDENTS
+    : STUDENTS.filter(s => s.id === assignTo);
+
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
+    setApproved(false);
+    setSelectedStudent(null);
+
+    const initialStatus = {};
+    targetStudents.forEach(s => { initialStatus[s.id] = 'generating'; });
+    setGeneratingStudents(initialStatus);
+    setAdaptedVersions(null);
+
     try {
       let rawContent = content || '';
 
@@ -34,12 +54,9 @@ export default function UploadAssignment() {
 
       if (!rawContent.trim()) {
         setError('Please provide lesson content or upload a file.');
+        setLoading(false);
         return;
       }
-
-      const targetStudents = assignTo === 'all'
-        ? STUDENTS
-        : STUDENTS.filter(s => s.id === assignTo);
 
       const studentsPayload = targetStudents.map(s => ({
         id: s.id,
@@ -53,12 +70,23 @@ export default function UploadAssignment() {
 
       const result = await adaptLesson(rawContent, subject, studentsPayload);
 
+      const finalStatus = {};
+      targetStudents.forEach(s => {
+        const r = result?.[s.id];
+        finalStatus[s.id] = r && !r.error ? 'ready' : 'error';
+      });
+      setGeneratingStudents(finalStatus);
       setAdaptedVersions(result);
       localStorage.setItem('spectra_adapted_lesson', JSON.stringify(result));
       setSubmitted(true);
+      // Auto-select first student
+      if (targetStudents.length > 0) setSelectedStudent(targetStudents[0].id);
     } catch (err) {
       console.error('Adaptation error:', err);
-      setError(err.message || 'Failed to generate adapted lessons. Check your Gemini API key.');
+      setError(err.message || 'Failed to generate adapted lessons.');
+      const errStatus = {};
+      targetStudents.forEach(s => { errStatus[s.id] = 'error'; });
+      setGeneratingStudents(errStatus);
     } finally {
       setLoading(false);
     }
@@ -72,8 +100,17 @@ export default function UploadAssignment() {
     }
   };
 
-  const preview = adaptedVersions?.[previewStudent];
-  const previewStudentData = STUDENTS.find(s => s.id === previewStudent);
+  const handleReject = () => {
+    setAdaptedVersions(null);
+    setSubmitted(false);
+    setSelectedStudent(null);
+    setGeneratingStudents({});
+  };
+
+  const preview = adaptedVersions?.[selectedStudent];
+  const previewStudentData = STUDENTS.find(s => s.id === selectedStudent);
+  const previewModality = previewStudentData?.learningStyles?.[0] || 'Visual';
+  const modalMeta = MODALITY_META[previewModality] || MODALITY_META.Visual;
 
   return (
     <div className="page">
@@ -81,32 +118,16 @@ export default function UploadAssignment() {
       <div className="page-header">
         <div>
           <div className="page-title">New lesson</div>
-          <div className="page-sub">Gemma will adapt this for each student's learning profile automatically</div>
+          <div className="page-sub">Gemma adapts this worksheet for each student's learning profile</div>
         </div>
       </div>
 
-      {error && (
-        <Alert variant="coral">
-          {error}
-        </Alert>
-      )}
+      {error && <Alert variant="coral">{error}</Alert>}
+      {approved && <Alert variant="info">Lessons approved and assigned! Students can now access the adapted content.</Alert>}
 
-      {approved && (
-        <Alert variant="info">
-          Lessons approved and assigned! Students can now access the adapted content.
-        </Alert>
-      )}
-
-      {submitted && !approved && (
-        <Alert variant="info">
-          Adapted versions generated for {Object.keys(adaptedVersions || {}).length} students. Review the preview and click "Approve + Assign" when ready.
-        </Alert>
-      )}
-
-      <div className="grid-2" style={{ gap: 16 }}>
-
-        {/* Input form */}
-        <div className="card">
+      {/* ─── INPUT FORM ─── */}
+      {!submitted && (
+        <div className="card" style={{ marginBottom: 16 }}>
           <div className="card-title">Lesson content</div>
           <div className="stack" style={{ gap: 14 }}>
             <div>
@@ -147,7 +168,6 @@ export default function UploadAssignment() {
               </select>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary">Preview raw</button>
               <button
                 className="btn btn-primary"
                 onClick={handleSubmit}
@@ -158,156 +178,136 @@ export default function UploadAssignment() {
             </div>
           </div>
         </div>
+      )}
 
-        {/* Preview of adapted version */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <div className="card-title" style={{ margin: 0 }}>
-              Preview — {previewStudentData?.name || 'Student'}
-            </div>
-            {submitted && adaptedVersions && (
-              <select
-                className="select-input"
-                style={{ width: 'auto', fontSize: 12 }}
-                value={previewStudent}
-                onChange={e => setPreviewStudent(e.target.value)}
-              >
-                {Object.keys(adaptedVersions).map(sid => {
-                  const s = STUDENTS.find(st => st.id === sid);
-                  return <option key={sid} value={sid}>{s?.name || sid}</option>;
-                })}
-              </select>
-            )}
-          </div>
+      {/* ─── GENERATING / RESULTS VIEW ─── */}
+      {(loading || submitted) && (
+        <div style={{ display: 'flex', gap: 16, minHeight: 500 }}>
 
-          {loading && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
-              <div>Gemma is analyzing the worksheet and generating personalized lessons...</div>
-              <div style={{ fontSize: 12, marginTop: 4 }}>This may take 10–30 seconds per student.</div>
-            </div>
-          )}
-
-          {!loading && preview && !preview.error && (
-            <div style={{ background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '1rem', fontSize: 13, lineHeight: 1.7 }}>
-              <div className="char-bubble">
-                {previewStudentData?.characters?.[0] || '⭐'} says: Let's learn!
-              </div>
-              <p style={{ marginBottom: 8 }}>
-                {preview.adaptedText}
-              </p>
-              {preview.formula && (
-                <div style={{
-                  background: 'var(--purple-light)', borderRadius: 8, padding: 12,
-                  textAlign: 'center', fontSize: 18, fontWeight: 500, color: 'var(--purple-dark)', margin: '10px 0',
-                }}>
-                  {preview.formula}
-                </div>
-              )}
-              {preview.hint && (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {preview.hint}
-                </p>
-              )}
-              {preview.questions && preview.questions.length > 0 && (
-                <div style={{ marginTop: 10, fontSize: 12 }}>
-                  <strong>Questions ({preview.questions.length}):</strong>
-                  {preview.questions.map((q, i) => (
-                    <div key={i} style={{ marginTop: 4, paddingLeft: 8 }}>
-                      {i + 1}. {q.text}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Learning modality breakdown */}
-              <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Learning Modalities</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
-                  <div style={{ padding: 6, background: 'var(--purple-light)', borderRadius: 4 }}>
-                    📷 Visual: {preview.imageUrls ? 'Image ready' : preview.cloudinaryPrompt ? 'Prompt ready' : 'Pending'}
-                  </div>
-                  <div style={{ padding: 6, background: 'var(--teal-light)', borderRadius: 4 }}>
-                    🔊 Audio: {preview.audioUrl ? 'Audio ready' : preview.elevenLabsScript ? 'Script ready' : 'Pending'}
-                  </div>
-                  <div style={{ padding: 6, background: '#FFF8E7', borderRadius: 4 }}>
-                    📖 Read: {preview.chatContext ? 'Context ready' : 'Pending'}
-                  </div>
-                  <div style={{ padding: 6, background: 'var(--coral-light)', borderRadius: 4 }}>
-                    🎮 Kinesthetic: {preview.interactiveHtml ? `${Math.round(preview.interactiveHtml.length / 1024)}KB HTML` : 'Pending'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {!loading && preview && preview.error && (
-            <div style={{ padding: '1rem', color: 'var(--coral-dark)', background: 'var(--coral-light)', borderRadius: 'var(--radius-sm)', fontSize: 13 }}>
-              Failed to generate for this student: {preview.error}
-            </div>
-          )}
-
-          {!loading && !preview && !submitted && (
-            <div style={{ background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '1rem', fontSize: 13, lineHeight: 1.7 }}>
-              <div className="char-bubble">🐕 Bluey says: Pizza time!</div>
-              <p style={{ marginBottom: 8 }}>
-                Bluey and Bingo are sharing a pizza with <strong>8 slices</strong> — that's the bottom number!
-                Bluey takes <strong>3</strong>, Bingo takes <strong>2</strong>. How many do they have together?
-              </p>
+          {/* SIDEBAR — Student list */}
+          <div style={{ width: 260, flexShrink: 0 }}>
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{
-                background: 'var(--purple-light)', borderRadius: 8, padding: 12,
-                textAlign: 'center', fontSize: 18, fontWeight: 500, color: 'var(--purple-dark)', margin: '10px 0',
+                padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                fontWeight: 600, fontSize: 14, background: 'var(--bg)',
               }}>
-                ³⁄₈ + ²⁄₈ = ?
+                Students ({targetStudents.length})
               </div>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Just add the top numbers! 3 + 2 = 5, so the answer is ⁵⁄₈.
-              </p>
+              {targetStudents.map(student => {
+                const status = generatingStudents[student.id] || 'pending';
+                const isSelected = selectedStudent === student.id;
+                const modality = student.learningStyles?.[0] || 'Visual';
+                const mMeta = MODALITY_META[modality] || MODALITY_META.Visual;
+                return (
+                  <div
+                    key={student.id}
+                    onClick={() => status === 'ready' && setSelectedStudent(student.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 16px',
+                      borderBottom: '1px solid var(--border)',
+                      background: isSelected ? 'var(--purple-light)' : 'transparent',
+                      cursor: status === 'ready' ? 'pointer' : 'default',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <Avatar
+                      initials={student.initials}
+                      bg={student.avatarColor.bg}
+                      color={student.avatarColor.text}
+                      size={32}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 500, fontSize: 13 }}>{student.name}</div>
+                      <div style={{ fontSize: 11, color: mMeta.color, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {mMeta.icon} {mMeta.label}
+                      </div>
+                    </div>
+                    <div>
+                      {status === 'generating' && (
+                        <span style={{ fontSize: 11, color: 'var(--amber-dark)', fontWeight: 500 }}>
+                          Generating...
+                        </span>
+                      )}
+                      {status === 'ready' && (
+                        <span style={{ fontSize: 16 }}>✓</span>
+                      )}
+                      {status === 'error' && (
+                        <span style={{ fontSize: 11, color: 'var(--coral)', fontWeight: 500 }}>Error</span>
+                      )}
+                      {status === 'pending' && (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Waiting</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
 
-          {/* Cloudinary image preview */}
-          <div style={{
-            marginTop: 12, background: 'var(--teal-light)', borderRadius: 'var(--radius-sm)',
-            padding: 12, fontSize: 12, color: 'var(--teal-dark)',
-          }}>
-            {preview?.imageUrls?.neutral ? (
-              <img src={preview.imageUrls.neutral} alt="Character visual" style={{ maxWidth: '100%', borderRadius: 6 }} />
-            ) : (
-              <>📷 Cloudinary — themed character image will load here
-              {preview?.cloudinaryPrompt && ` (${preview.cloudinaryPrompt})`}</>
+            {submitted && !approved && (
+              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button className="btn btn-primary" onClick={handleApprove}>
+                  Approve + Assign All
+                </button>
+                <button className="btn btn-secondary" onClick={handleReject}>
+                  Reject + Redo
+                </button>
+                <button className="btn btn-secondary" onClick={handleSubmit} disabled={loading}>
+                  Regenerate All
+                </button>
+              </div>
             )}
           </div>
 
-          {/* ElevenLabs audio preview */}
-          <div style={{
-            marginTop: 8, background: 'var(--blue-light)', borderRadius: 'var(--radius-sm)',
-            padding: 12, fontSize: 12, color: 'var(--blue-dark)',
-          }}>
-            {preview?.audioUrl ? (
-              <audio controls src={preview.audioUrl} style={{ width: '100%' }} />
-            ) : (
-              <>🔊 ElevenLabs — narration audio will auto-play in auditory mode</>
+          {/* MAIN — Student preview (what the student will see) */}
+          <div style={{ flex: 1 }}>
+            {loading && !selectedStudent && (
+              <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>
+                  Gemma is generating personalized lessons...
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  This takes about 30 seconds per student. Each student gets content tailored to their learning style and favorite character.
+                </div>
+              </div>
             )}
-          </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button className="btn btn-secondary btn-sm" onClick={handleSubmit} disabled={loading}>
-              Regenerate
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleApprove}
-              disabled={!submitted || approved}
-            >
-              {approved ? 'Approved!' : 'Approve + Assign'}
-            </button>
+            {selectedStudent && preview && !preview.error && (
+              <StudentPreview
+                student={previewStudentData}
+                preview={preview}
+                modality={previewModality}
+                modalMeta={modalMeta}
+              />
+            )}
+
+            {selectedStudent && preview && preview.error && (
+              <div className="card" style={{ padding: '2rem', color: 'var(--coral-dark)', background: 'var(--coral-light)' }}>
+                <div style={{ fontWeight: 600, marginBottom: 8 }}>Error generating for {previewStudentData?.name}</div>
+                <div style={{ fontSize: 13 }}>{preview.error}</div>
+              </div>
+            )}
+
+            {selectedStudent && !preview && submitted && (
+              <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
+                No data available for this student yet.
+              </div>
+            )}
+
+            {!selectedStudent && submitted && (
+              <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>👈</div>
+                <div style={{ fontSize: 15, fontWeight: 500 }}>Select a student from the sidebar</div>
+                <div style={{ fontSize: 13, marginTop: 4 }}>Click on a student to preview what they will see</div>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Published Assignments — tracking section */}
-      <div style={{ marginTop: 8 }}>
+      {/* ─── Published Assignments ─── */}
+      <div style={{ marginTop: 16 }}>
         <div className="page-header" style={{ marginBottom: 0 }}>
           <div>
             <div className="page-title" style={{ fontSize: 16 }}>Published Assignments</div>
@@ -345,36 +345,26 @@ export default function UploadAssignment() {
                       <ProgressBar pct={progressPct} variant="teal" />
                     </div>
                   </div>
-
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10, fontSize: 11 }}>
                     <Badge variant="teal">{completedCount} completed</Badge>
                     <Badge variant="amber">{inProgressCount} in progress</Badge>
                     <Badge variant="gray">{notStartedCount} not started</Badge>
                   </div>
-
-                  {/* Per-student status */}
                   <div style={{ borderTop: '0.5px solid var(--border)' }}>
                     {assignment.assignedTo.map(studentId => {
                       const student = STUDENTS.find(s => s.id === studentId);
                       const status = assignment.studentStatus[studentId];
                       if (!student || !status) return null;
-
                       const statusVariant = status.status === 'completed' ? 'teal'
                         : status.status === 'in-progress' ? 'amber' : 'gray';
                       const statusText = status.status === 'completed' ? 'Completed'
                         : status.status === 'in-progress' ? 'In Progress' : 'Not Started';
-
                       return (
                         <div key={studentId} style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           padding: '8px 4px', borderBottom: '0.5px solid var(--border)',
                         }}>
-                          <Avatar
-                            initials={student.initials}
-                            bg={student.avatarColor.bg}
-                            color={student.avatarColor.text}
-                            size={28}
-                          />
+                          <Avatar initials={student.initials} bg={student.avatarColor.bg} color={student.avatarColor.text} size={28} />
                           <span style={{ flex: 1, fontWeight: 500, fontSize: 13 }}>{student.name}</span>
                           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{status.adaptedMode}</span>
                           <Badge variant={statusVariant}>{statusText}</Badge>
@@ -388,6 +378,238 @@ export default function UploadAssignment() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ─── Student Preview Component ─── */
+function StudentPreview({ student, preview, modality, modalMeta }) {
+  const character = student?.characters?.[0] || 'Character';
+  const questions = preview?.questions || [];
+
+  return (
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      {/* Top bar */}
+      <div style={{
+        padding: '12px 20px', background: modalMeta.bg,
+        borderBottom: `2px solid ${modalMeta.color}`,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 16 }}>
+            {student?.name}'s Preview
+          </div>
+          <div style={{ fontSize: 12, color: modalMeta.color, marginTop: 2 }}>
+            {modalMeta.icon} {modalMeta.label} Mode · Themed to {character}
+          </div>
+        </div>
+        <Badge variant="blue" style={{ fontSize: 13 }}>
+          {modality}
+        </Badge>
+      </div>
+
+      <div style={{ padding: 20 }}>
+        {/* Character bubble */}
+        <div style={{
+          background: modalMeta.bg, borderRadius: 12, padding: '12px 16px',
+          fontSize: 14, marginBottom: 16, border: `1px solid ${modalMeta.color}20`,
+        }}>
+          <strong>{character} says:</strong>{' '}
+          {preview.adaptedText?.slice(0, 300)}{preview.adaptedText?.length > 300 ? '...' : ''}
+        </div>
+
+        {/* Modality-specific preview */}
+        {modality === 'Visual' && (
+          <VisualPreview preview={preview} character={character} />
+        )}
+        {modality === 'Auditory' && (
+          <AuditoryPreview preview={preview} character={character} />
+        )}
+        {modality === 'Reading' && (
+          <ReadingPreview preview={preview} character={character} />
+        )}
+        {modality === 'Kinesthetic' && (
+          <KinestheticPreview preview={preview} character={character} />
+        )}
+
+        {/* Questions preview */}
+        {questions.length > 0 && (
+          <div style={{ marginTop: 20, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10 }}>
+              Questions ({questions.length})
+            </div>
+            {questions.map((q, i) => (
+              <div key={q.id || i} style={{
+                padding: '10px 14px', background: 'var(--bg)', borderRadius: 8,
+                marginBottom: 8, fontSize: 13,
+              }}>
+                <div style={{ fontWeight: 500, marginBottom: 6 }}>{i + 1}. {q.text}</div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {(q.options || []).map((opt, oi) => (
+                    <span key={oi} style={{
+                      padding: '4px 12px', borderRadius: 6, fontSize: 12,
+                      border: '1px solid var(--border-md)',
+                      background: oi === q.correctIndex ? 'var(--teal-light)' : 'transparent',
+                      fontWeight: oi === q.correctIndex ? 600 : 400,
+                    }}>
+                      {opt} {oi === q.correctIndex ? '✓' : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Visual Preview ─── */
+function VisualPreview({ preview, character }) {
+  const imageMap = preview?.imageUrls || {};
+  const visualImage = imageMap.neutral || preview?.imageUrl || null;
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#7C3AED' }}>
+        Visual Mode — Static images themed to {character}
+      </div>
+      {visualImage ? (
+        <div style={{
+          background: '#F5F3FF', borderRadius: 10, padding: 16,
+          textAlign: 'center', marginBottom: 12,
+        }}>
+          <img src={visualImage} alt="Lesson visual" style={{ maxWidth: '100%', borderRadius: 8 }} />
+        </div>
+      ) : preview?.cloudinaryPrompt ? (
+        <div style={{
+          background: '#F5F3FF', borderRadius: 8, padding: 12,
+          fontSize: 12, color: '#7C3AED', marginBottom: 12,
+        }}>
+          Image prompt: {preview.cloudinaryPrompt}
+        </div>
+      ) : null}
+      {preview?.formula && (
+        <div style={{
+          background: '#F3F0FF', borderRadius: 8, padding: 12,
+          textAlign: 'center', fontSize: 18, fontWeight: 600, color: '#7C3AED',
+        }}>
+          {preview.formula}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Auditory Preview ─── */
+function AuditoryPreview({ preview, character }) {
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#0D9488' }}>
+        Auditory Mode — ElevenLabs narration by {character}
+      </div>
+      {preview?.audioUrl ? (
+        <div style={{
+          background: '#E6FFFA', borderRadius: 8, padding: 16,
+          textAlign: 'center', marginBottom: 12,
+        }}>
+          <audio controls src={preview.audioUrl} style={{ width: '100%' }} />
+          <div style={{ fontSize: 11, color: '#0D9488', marginTop: 8 }}>
+            Student can listen and respond by talking to {character}
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          background: '#E6FFFA', borderRadius: 8, padding: 12,
+          fontSize: 12, color: '#0D9488', marginBottom: 12,
+        }}>
+          Audio narration will be generated via ElevenLabs
+        </div>
+      )}
+      {preview?.elevenLabsScript && (
+        <div style={{
+          background: '#F0FDFA', borderRadius: 8, padding: 12,
+          fontSize: 12, fontStyle: 'italic', color: '#115E59', marginBottom: 12,
+        }}>
+          Narration script: "{preview.elevenLabsScript.slice(0, 300)}{preview.elevenLabsScript.length > 300 ? '...' : ''}"
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Reading Preview ─── */
+function ReadingPreview({ preview, character }) {
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#B45309' }}>
+        Reading Mode — Text-based lesson with {character}
+      </div>
+      {preview?.chatContext && (
+        <div style={{
+          background: '#FFF8E7', border: '1px solid #F0DFA0', borderRadius: 8,
+          padding: '12px 16px', marginBottom: 12, fontSize: 13, lineHeight: 1.6,
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Key Concepts</div>
+          {preview.chatContext}
+        </div>
+      )}
+      {preview?.adaptedText && (
+        <div style={{
+          fontSize: 14, lineHeight: 1.7, marginBottom: 12,
+          padding: '12px 16px', background: '#FFFDF5', borderRadius: 8,
+        }}>
+          {preview.adaptedText}
+        </div>
+      )}
+      <div style={{ fontSize: 11, color: '#B45309' }}>
+        Student will read the text and select answers. Chat tutor available for questions.
+      </div>
+    </div>
+  );
+}
+
+/* ─── Kinesthetic Preview ─── */
+function KinestheticPreview({ preview, character }) {
+  return (
+    <div>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8, color: '#DC2626' }}>
+        Kinesthetic Mode — Interactive HTML/CSS by Gemma, themed to {character}
+      </div>
+      {preview?.interactiveHtml ? (
+        <div style={{ marginBottom: 12 }}>
+          <iframe
+            title="Interactive lesson preview"
+            srcDoc={preview.interactiveHtml}
+            sandbox="allow-scripts"
+            style={{
+              width: '100%', minHeight: 350, border: '2px solid #FCA5A5',
+              borderRadius: 10, background: '#fff',
+            }}
+          />
+          <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6 }}>
+            {Math.round((preview.interactiveHtml.length) / 1024)}KB interactive HTML generated by Gemma
+          </div>
+        </div>
+      ) : preview?.interactivePlan?.length ? (
+        <div style={{ marginBottom: 12 }}>
+          {preview.interactivePlan.map((step, i) => (
+            <div key={i} style={{
+              padding: '8px 14px', background: i % 2 === 0 ? '#FFF1F0' : 'var(--bg)',
+              borderRadius: 8, marginBottom: 6, fontSize: 13,
+            }}>
+              <strong>Step {i + 1}:</strong> {step.instruction}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          background: '#FFF1F0', borderRadius: 8, padding: 12,
+          fontSize: 12, color: '#DC2626', marginBottom: 12,
+        }}>
+          Interactive activity will be generated by Gemma
+        </div>
+      )}
     </div>
   );
 }

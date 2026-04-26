@@ -253,70 +253,101 @@ function normalizeAdaptation(raw, student, subject) {
 
 async function attachMedia(adaptation, student, subject) {
   const withMedia = { ...adaptation };
+  const styles = (student?.learningStyles || []).map(s => String(s).toLowerCase());
+  const needsImages = styles.some(s => s.includes('visual'));
+  const needsAudio = styles.some(s => s.includes('auditory'));
 
-  try {
-    const imageSet = await generateAndUploadLessonImageSet({
-      prompt: adaptation.cloudinaryPrompt,
-      studentId: student?.id,
-      studentName: student?.name,
-      subject,
-    });
-    if (imageSet?.urls) {
-      withMedia.imageUrl = imageSet.urls.neutral;
-      withMedia.imageUrls = imageSet.urls;
-      logAiDebug('cloudinary_image_success', {
-        studentId: student?.id || null,
+  // Only generate images for Visual learners
+  if (needsImages) {
+    try {
+      const imageSet = await generateAndUploadLessonImageSet({
+        prompt: adaptation.cloudinaryPrompt,
+        studentId: student?.id,
+        studentName: student?.name,
         subject,
       });
-    } else if (imageSet?.reason) {
-      withMedia.imageStatus = imageSet.reason;
-      logAiDebug('cloudinary_image_skipped', {
-        studentId: student?.id || null,
-        reason: imageSet.reason,
-      });
+      if (imageSet?.urls) {
+        withMedia.imageUrl = imageSet.urls.neutral;
+        withMedia.imageUrls = imageSet.urls;
+        logAiDebug('cloudinary_image_success', { studentId: student?.id || null, subject });
+      } else if (imageSet?.reason) {
+        withMedia.imageStatus = imageSet.reason;
+      }
+    } catch (err) {
+      withMedia.imageStatus = `image_generation_failed: ${err.message}`;
+      logAiDebug('cloudinary_image_failure', { studentId: student?.id || null, error: compactError(err) });
     }
-  } catch (err) {
-    withMedia.imageStatus = `image_generation_failed: ${err.message}`;
-    logAiDebug('cloudinary_image_failure', {
-      studentId: student?.id || null,
-      error: compactError(err),
-    });
   }
 
-  try {
-    const audio = await generateAndUploadLessonAudio({
-      script: adaptation.elevenLabsScript,
-      studentId: student?.id,
-      subject,
-    });
-    if (audio?.url) {
-      withMedia.audioUrl = audio.url;
-      logAiDebug('audio_success', {
-        studentId: student?.id || null,
+  // Only generate audio for Auditory learners
+  if (needsAudio) {
+    try {
+      const audio = await generateAndUploadLessonAudio({
+        script: adaptation.elevenLabsScript,
+        studentId: student?.id,
         subject,
       });
-    } else if (audio?.audioDataUrl) {
-      withMedia.audioUrl = audio.audioDataUrl;
-      withMedia.audioStatus = 'inline_data_url';
-      logAiDebug('audio_inline_data_url', {
-        studentId: student?.id || null,
-      });
-    } else if (audio?.reason) {
-      withMedia.audioStatus = audio.reason;
-      logAiDebug('audio_skipped', {
-        studentId: student?.id || null,
-        reason: audio.reason,
-      });
+      if (audio?.url) {
+        withMedia.audioUrl = audio.url;
+        logAiDebug('audio_success', { studentId: student?.id || null, subject });
+      } else if (audio?.audioDataUrl) {
+        withMedia.audioUrl = audio.audioDataUrl;
+        withMedia.audioStatus = 'inline_data_url';
+      } else if (audio?.reason) {
+        withMedia.audioStatus = audio.reason;
+      }
+    } catch (err) {
+      withMedia.audioStatus = `audio_generation_failed: ${err.message}`;
+      logAiDebug('audio_failure', { studentId: student?.id || null, error: compactError(err) });
     }
-  } catch (err) {
-    withMedia.audioStatus = `audio_generation_failed: ${err.message}`;
-    logAiDebug('audio_failure', {
-      studentId: student?.id || null,
-      error: compactError(err),
-    });
   }
 
   return withMedia;
+}
+
+function getModalityInstructions(primaryStyle, student) {
+  const character = (student.characters || ['the character'])[0];
+  switch (primaryStyle) {
+    case 'Visual':
+      return `VISUAL LEARNER INSTRUCTIONS:
+- Focus on generating a rich cloudinaryPrompt for Cloudinary image generation
+- The cloudinaryPrompt should describe a detailed, colorful scene of ${character} demonstrating the math concepts from the worksheet
+- Keep adaptedText SHORT — visual learners need minimal text
+- Generate questions with clear, visual-friendly answer options
+- The interactiveHtml can be minimal for this learner`;
+    case 'Auditory':
+      return `AUDITORY LEARNER INSTRUCTIONS:
+- Focus on generating a FULL, detailed elevenLabsScript for text-to-speech
+- The elevenLabsScript should be a warm, conversational narration as if ${character} is talking directly to the student
+- Include ALL worksheet content and explanations in the narration — this is the PRIMARY learning channel
+- The narration should walk through each problem step by step
+- Make the narration 3-4 paragraphs, covering the full lesson
+- The student will listen and respond back via chat
+- Keep the adaptedText brief since they learn by listening`;
+    case 'Reading':
+      return `READING LEARNER INSTRUCTIONS:
+- Focus on generating rich, detailed adaptedText with the full lesson explanation
+- Use ${character} as the narrator/guide throughout the text
+- Include step-by-step explanations of the concepts
+- Generate a comprehensive chatContext so the student can ask the tutor questions
+- Keep interactiveHtml and elevenLabsScript minimal
+- The student reads the text and selects answers to questions`;
+    case 'Kinesthetic':
+      return `KINESTHETIC LEARNER INSTRUCTIONS:
+- Focus on generating a COMPLETE, interactive HTML/CSS/JS lesson
+- The interactiveHtml MUST be a full standalone HTML document (200+ lines) with:
+  * Inline CSS for colorful, themed styling featuring ${character}
+  * Interactive elements: clickable buttons, drag-and-drop, or input fields
+  * The ACTUAL problems from the worksheet embedded as interactive exercises
+  * Score tracking and visual feedback (green for correct, red for wrong)
+  * Celebration animation when all problems are solved
+  * Accessible, low-stimulation design
+  * Must work in an iframe with NO external dependencies
+- Keep elevenLabsScript minimal (no audio needed for kinesthetic)
+- Keep adaptedText brief — this learner interacts, not reads`;
+    default:
+      return '';
+  }
 }
 
 /**
@@ -326,67 +357,68 @@ async function adaptLesson(rawText, subject, students) {
   const results = {};
 
   for (const student of students) {
-    const prompt = `You are an AI tutor adapting a worksheet for a special education student with autism.
+    const primaryStyle = (student.learningStyles || ['Visual'])[0];
+    const modalityInstructions = getModalityInstructions(primaryStyle, student);
+
+    const prompt = `You are an AI tutor adapting a real worksheet for a special education student with autism.
 
 Student profile:
 - Name: ${student.name}
 - Grade: ${student.grade}
-- Learning styles: ${(student.learningStyles || []).join(', ')}
+- PRIMARY learning style: ${primaryStyle}
 - Favorite characters: ${(student.characters || []).join(', ')}
 - Sensory preferences: ${(student.sensoryPrefs || []).join(', ')}
 - Frustration triggers: ${(student.frustrationTriggers || []).join(', ')}
 
-Original worksheet content:
+ACTUAL WORKSHEET CONTENT (adapt the REAL problems from this worksheet):
 ${rawText}
 
 Subject: ${subject}
 
-Generate a personalized lesson from this worksheet. Return valid JSON with this exact structure:
+IMPORTANT: You must adapt the ACTUAL problems from the worksheet above. Do NOT make up new problems. Each question should be a character-themed version of a real problem from the worksheet.
+
+${modalityInstructions}
+
+Return valid JSON with this exact structure:
 {
   "schemaVersion": "2",
-  "adaptedText": "The lesson content rewritten using the student's favorite characters and appropriate reading level",
-  "formula": "The key formula or concept displayed prominently (if applicable, otherwise null)",
+  "adaptedText": "The lesson content rewritten using the student's favorite characters. For ${primaryStyle} mode, this should ${primaryStyle === 'Visual' ? 'be minimal — focus on the visual' : primaryStyle === 'Auditory' ? 'be the narration script overview' : primaryStyle === 'Reading' ? 'be the FULL detailed lesson text with explanations' : 'be a brief intro to the interactive activity'}",
+  "formula": "The key formula or concept (if applicable, otherwise null)",
   "hint": "A helpful hint using the student's character theme",
-  "cloudinaryPrompt": "A description for generating a themed illustration featuring the student's favorite character doing the lesson activity",
-  "elevenLabsScript": "The text that should be read aloud for auditory learners — warm, conversational narration using character references",
+  "cloudinaryPrompt": "${primaryStyle === 'Visual' ? 'A DETAILED description for generating a themed illustration featuring the character doing the specific worksheet activity. Be very specific about what to show.' : 'Brief description for illustration'}",
+  "elevenLabsScript": "${primaryStyle === 'Auditory' ? 'A FULL warm conversational narration as if the character is talking to the student. Include ALL worksheet content in the narration. This will be read aloud by ElevenLabs TTS. Make it 2-3 paragraphs long.' : 'Brief narration summary'}",
   "modalityPlan": {
-    "primary": "visual|auditory|chat",
-    "supports": ["image", "audio", "text", "interactive"]
+    "primary": "${primaryStyle.toLowerCase()}",
+    "supports": []
   },
   "interactivePlan": [
-    { "step": "tap_to_start", "instruction": "short instruction for a low-stimulation interactive step" }
+    { "step": "step_name", "instruction": "instruction for interactive step" }
   ],
-  "interactiveHtml": "A self-contained HTML snippet (with inline CSS and JS) that creates a simple interactive lesson. Use the student's favorite character. The HTML should let the student click, drag, or tap to solve problems. Keep it accessible and low-stimulation. Must be a single string of valid HTML that can be rendered in an iframe. Include inline styles, no external dependencies. Example: clickable buttons that count items, drag-and-drop matching, or interactive number lines.",
-  "chatContext": "A short paragraph of context about the lesson that a chat tutor can reference when the student asks questions in Read mode. Include key vocabulary terms, the main concept being taught, and how to explain it simply.",
+  "interactiveHtml": "${primaryStyle === 'Kinesthetic' ? 'A COMPLETE self-contained HTML document with inline CSS and JS. It MUST let the student solve the actual worksheet problems interactively (clicking, dragging, or typing answers). Theme it with the character. Use colorful, accessible design. Include score tracking, visual feedback for correct/wrong answers, and celebrations. Must work standalone in an iframe with NO external dependencies. Make it at least 200 lines of HTML.' : 'A simple HTML snippet with one interactive element'}",
+  "chatContext": "Context paragraph about the lesson for the chat tutor to reference",
   "confidence": 0.84,
   "questions": [
     {
       "id": "q1",
-      "text": "Question text using character theme",
-      "options": ["option A", "option B", "option C"],
+      "text": "A character-themed version of an ACTUAL problem from the worksheet",
+      "options": ["answer A", "answer B", "answer C", "answer D"],
       "correctIndex": 0,
       "hint": "A simpler hint if they get it wrong",
-      "reframeExplanation": "A step-by-step breakdown if the student is really struggling"
+      "reframeExplanation": "Step-by-step breakdown for struggling students"
     }
   ]
 }
 
 Rules:
-- Use the student's favorite characters as examples in problems
-- Break concepts into small, clear steps
-- Use simple language appropriate for their grade level
-- Avoid their frustration triggers (e.g., if "too many words" is a trigger, keep text minimal)
-- Respect their sensory preferences (e.g., if "Avoids loud sounds" minimize audio cues, if "Minimal text" keep text very short)
-- Generate 3-5 questions based on the worksheet content
-- Make it encouraging and warm in tone
-- Theme EVERYTHING to the student's favorite character(s) — the character should appear in the story, questions, hints, interactive elements, and narration
-- Respect modality intent based on learning style:
-  - visual: generate a detailed cloudinaryPrompt describing a colorful, static image of the character doing the lesson activity. Keep text minimal. Focus on imagery.
-  - auditory: generate a warm, friendly elevenLabsScript as if the character is talking directly to the student. Conversational tone. Include all lesson content in the narration.
-  - reading: generate rich adaptedText with the full lesson. Include a chatContext paragraph with vocabulary and key concepts. Use clear paragraph structure.
-  - kinesthetic: generate interactiveHtml — a self-contained HTML/CSS/JS snippet where the student can click buttons, drag items, or interact to solve the problem. Theme it to the character. Keep it simple and accessible. Also generate interactivePlan steps.
-- The interactiveHtml MUST be a complete, self-contained HTML document fragment with inline styles. It should work when inserted into an iframe with no external dependencies.
-- Return only valid JSON, with no markdown code block`;
+- ADAPT THE REAL WORKSHEET PROBLEMS — do not invent new ones
+- Use ${(student.characters || ['the character'])[0]} as the character in ALL content
+- Generate 5-8 questions based on the actual worksheet problems
+- Each question must have 4 answer options with one correct answer
+- Theme EVERYTHING to the student's favorite character
+- Keep language at ${student.grade} reading level
+- Avoid frustration triggers: ${(student.frustrationTriggers || []).join(', ')}
+- Respect sensory preferences: ${(student.sensoryPrefs || []).join(', ')}
+- Return only valid JSON, no markdown code fences`;
 
     try {
       const adapted = await callGemma(prompt);

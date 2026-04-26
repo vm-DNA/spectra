@@ -143,7 +143,7 @@ Return ONLY valid JSON (no markdown code fences):
 
   // Try server-side API first
   try {
-    const res = await fetch('/api/reframe-question', {
+    const res = await fetch('/api/reframe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question, studentProfile, wrongAttempts }),
