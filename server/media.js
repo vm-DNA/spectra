@@ -113,15 +113,22 @@ async function generateAndUploadLessonImageSet({ prompt, studentId, studentName,
     const buffer = Buffer.from(svg, 'utf8');
     const publicId = `spectra/lessons/${slugify(subject, 'general')}/${slugify(studentId, 'student')}/visual-${mood}`;
 
-    const uploaded = await uploadBufferToCloudinary(buffer, {
-      public_id: publicId,
-      resource_type: 'image',
-      overwrite: true,
-      format: 'png',
-    });
+    try {
+      const uploaded = await uploadBufferToCloudinary(buffer, {
+        public_id: publicId,
+        resource_type: 'image',
+        overwrite: true,
+        format: 'png',
+      });
 
-    if (uploaded.skipped) return uploaded;
-    urls[mood] = uploaded.secure_url;
+      if (uploaded.skipped) {
+        urls[mood] = `data:image/svg+xml;base64,${buffer.toString('base64')}`;
+      } else {
+        urls[mood] = uploaded.secure_url;
+      }
+    } catch {
+      urls[mood] = `data:image/svg+xml;base64,${buffer.toString('base64')}`;
+    }
   }
 
   return { urls };
@@ -166,18 +173,24 @@ async function generateAndUploadLessonAudio({ script, studentId, subject }) {
   const tts = await synthesizeElevenLabsAudio(script);
   if (tts.skipped) return tts;
 
+  const audioDataUrl = `data:${tts.contentType};base64,${tts.buffer.toString('base64')}`;
   const publicId = `spectra/lessons/${slugify(subject, 'general')}/${slugify(studentId, 'student')}/audio`;
-  const uploaded = await uploadBufferToCloudinary(tts.buffer, {
-    public_id: publicId,
-    resource_type: 'video',
-    overwrite: true,
-    format: 'mp3',
-  });
 
-  if (uploaded.skipped) {
-    return { skipped: true, reason: uploaded.reason, audioDataUrl: `data:${tts.contentType};base64,${tts.buffer.toString('base64')}` };
+  try {
+    const uploaded = await uploadBufferToCloudinary(tts.buffer, {
+      public_id: publicId,
+      resource_type: 'video',
+      overwrite: true,
+      format: 'mp3',
+    });
+
+    if (uploaded.skipped) {
+      return { audioDataUrl };
+    }
+    return { url: uploaded.secure_url, publicId: uploaded.public_id };
+  } catch {
+    return { audioDataUrl };
   }
-  return { url: uploaded.secure_url, publicId: uploaded.public_id };
 }
 
 module.exports = {
